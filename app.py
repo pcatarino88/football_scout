@@ -6,9 +6,7 @@ import base64
 from scout_core import set_df_scaled, top_players, radar_dodecagon
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / ".fs_data"
-DATA_DIR.mkdir(exist_ok=True)
-DF_PATH = DATA_DIR / "df_scaled.parquet"
+DF_PATH = BASE_DIR / "assets" / "df_scaled.parquet"
 
 def save_df_scaled(df: pd.DataFrame):
     df.to_parquet(DF_PATH, index=False)

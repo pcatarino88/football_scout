@@ -1,0 +1,46 @@
+# --------------------
+# Project-specific
+# --------------------
+.fs_data/
+*.parquet
+*.csv
+*.xlsx
+*.xls
+
+data/
+datasets/
+
+# --------------------
+# Python artifacts
+# --------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+*.db
+
+# --------------------
+# Jupyter
+# --------------------
+.ipynb_checkpoints/
+
+# --------------------
+# Virtual environments
+# --------------------
+.env
+.venv/
+env/
+venv/
+*.egg-info/
+
+# --------------------
+# OS/editor junk
+# --------------------
+.DS_Store
+Thumbs.db
+
+# --------------------
+# Streamlit
+# --------------------
+.streamlit/secrets.toml

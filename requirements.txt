@@ -8,3 +8,4 @@ openpyxl>=3.1
 requests>=2.32
 beautifulsoup4>=4.12
 lxml>=5.2
+fake-useragent>=1.4

@@ -32,11 +32,7 @@ The project is built in **Python** and deployed with **Streamlit Cloud**.
 
 football_scout/
 
-│
-
 ├── assets/                   # Stored datasets and static files
-
-│
 
 ├── scout_core/               # Core logic
 
@@ -50,8 +46,6 @@ football_scout/
 
 │   └── ranking.py            # Ranking players by metrics
 
-│
-
 ├── 1. Data Collection.ipynb       # Data scraping
 
 ├── 2. Data Cleaning and EDA.ipynb # Cleaning & exploratory analysis
@@ -59,8 +53,6 @@ football_scout/
 ├── 3. Scout.ipynb                  # Defining scouting rules
 
 ├── 4. Web App.ipynb                # Testing scout and developing the Streamlit app
-
-│
 
 ├── app.py                   # Streamlit app entry point
 

@@ -3,11 +3,22 @@ import pandas as pd
 import io
 from pathlib import Path
 import base64
-from scout_core import set_df_scaled, top_players, radar_dodecagon
+from scout_core import set_df_scaled, top_players, FEATURES_ALLOWED, FEATURES_DEFAULT, radar_dodecagon
 
 BASE_DIR = Path(__file__).resolve().parent
 DF_PATH = BASE_DIR / "assets" / "df_scaled.parquet"
+FALLBACK_PATH = BASE_DIR / "assets" / "sample_df_scaled.parquet"
 
+# Load dataset
+if DF_PATH.exists():
+    df_scaled = pd.read_parquet(DF_PATH)
+elif FALLBACK_PATH.exists():
+    st.warning("Using fallback sample dataset.")
+    df_scaled = pd.read_parquet(FALLBACK_PATH)
+else:
+    st.error("No dataset found.")
+    st.stop()
+    
 def save_df_scaled(df: pd.DataFrame):
     df.to_parquet(DF_PATH, index=False)
 
@@ -56,7 +67,7 @@ else:
         .banner-text h1 {{
             margin: 0 0 6px 0;
             font-size: 44px;
-        }}
+        }}    
         .banner-text p {{
             margin: 0; font-size: 18px; opacity: .95;
         }}
@@ -71,20 +82,29 @@ else:
             .banner-text h1 {{ font-size: 26px; }}
             .banner-text p {{ font-size: 14px; }}
         }}
+        .stTabs [role="tab"] {{
+            font-size: 1.5rem;      /* bigger text */
+            font-weight: 800;       /* bolder */
+            padding: 1.0rem 1,4rem;   /* roomier */
+        }}
+        .stTabs [aria-selected="true"] {{
+            color: #d32f2f;
+            border-bottom: 3px solid #d32f2f; /* thicker underline */
+        }}
         </style>
 
         <div class="banner-wrap">
             <img class="banner-img" src="data:image/png;base64,{b64}" alt="banner"/>
             <div class="banner-overlay"></div>
             <div class="banner-text">
-                <h1>⚽ Football Scout by Pedro Catarino</h1>
+                <h1>Football Scout by Pedro Catarino</h1>
                 <p>Find and compare players from 14 different leagues with interactive charts</p>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-
+    
 # ---------------------------
 # Data loading (one-time)
 # ---------------------------
@@ -98,36 +118,36 @@ def load_df(file) -> pd.DataFrame:
         # default to excel
         return pd.read_excel(file)
 
-with st.sidebar:
-    st.header("Data")
-    
-    # 1) Try auto-load from disk
-    df_scaled = None
-    if DF_PATH.exists():
-        df_scaled = pd.read_parquet(DF_PATH)
+if 0 == 1: # Sidebar unavailable. When needed adjust to: 0 == 0
+    with st.sidebar:
+        st.header("Data")
+        # 1) Try auto-load from disk
+        df_scaled = None
+        if DF_PATH.exists():
+            df_scaled = pd.read_parquet(DF_PATH)
 
-    # 2) If not found, ask for upload
-    if df_scaled is None:
-        df_file = st.file_uploader(
-            "Upload your df_scaled file",
-            type=["parquet", "csv", "xlsx", "xls"]
-        )
-        if df_file:
-            df_scaled = load_df(df_file)          # your cached reader
-            df_scaled.to_parquet(DF_PATH, index=False)  # persist
-            set_df_scaled(df_scaled)
-            st.success("File uploaded and saved. It will auto-load next time.")
-            st.rerun()
+        # 2) If not found, ask for upload
+        if df_scaled is None:
+            df_file = st.file_uploader(
+                "Upload your df_scaled file",
+                type=["parquet", "csv", "xlsx", "xls"]
+            )
+            if df_file:
+                df_scaled = load_df(df_file)        
+                df_scaled.to_parquet(DF_PATH, index=False)  
+                set_df_scaled(df_scaled)
+                st.success("File uploaded and saved. It will auto-load next time.")
+                st.rerun()
+            else:
+                st.info("Please upload your preprocessed df_scaled to begin.")
+                st.stop()
         else:
-            st.info("Please upload your preprocessed df_scaled to begin.")
-            st.stop()
-    else:
-        set_df_scaled(df_scaled)
-        st.success("Loaded stored df_scaled.parquet")
+            set_df_scaled(df_scaled)
+            st.success("Loaded stored df_scaled.parquet")
 
-        if st.button("Forget stored dataset"):
-            DF_PATH.unlink(missing_ok=True)
-            st.rerun()
+            if st.button("Forget stored dataset"):
+                DF_PATH.unlink(missing_ok=True)
+                st.rerun()
 
 # Safety guard (use df_scaled, not df_file)
 if df_scaled is None:
@@ -141,7 +161,7 @@ feature_candidates = [c for c in numeric_cols if c not in INFO_COLS]
 # ---------------------------
 # UI Tabs
 # ---------------------------
-tab1, tab2 = st.tabs(["🏆 Top Players", "📊 Compare (Radar)"])
+tab1, tab2 = st.tabs(["🏆 Find Top Players", "📊 Compare Players"])
 
 # ===========================
 # Tab 1: Top Players
@@ -149,45 +169,59 @@ tab1, tab2 = st.tabs(["🏆 Top Players", "📊 Compare (Radar)"])
 with tab1:
     st.subheader("Find Top Players")
 
-    # Sidebar-like controls inside tab
-    cols = st.columns(5)
-    # dynamic options from data
-    pos_opts     = sorted(df_scaled["Pos"].dropna().unique().tolist()) if "Pos" in df_scaled.columns else []
+    # ----- Top filters row (single line) -----
+    # options from data
+    pos_opts     = sorted(df_scaled["Pos"].dropna().unique().tolist()) if "Pos"    in df_scaled.columns else []
+    league_opts  = sorted(df_scaled["League"].dropna().unique().tolist()) if "League" in df_scaled.columns else []
 
-    position = cols[1].selectbox("Position", [""] + pos_opts, index=0)
+    # 5 columns across that row (League | Position | Age | Minutes | Top N)
+    c_league, c_pos, c_age, c_min, c_topn = st.columns([1.2, 1.2, 1.4, 1.4, 1])
+
+    # League (left-most). "All" means no filter.
+    league_choice = c_league.selectbox(
+        "League",
+        options=(["All"] + league_opts) if league_opts else ["All"],
+        index=0,
+    )
+    # Position Selectbox
+    position = c_pos.selectbox(
+        "Position",
+        options=([""] + pos_opts),
+        index=0,
+    )
+    # Age Slider
     age_min = int(df_scaled["Age"].min()) if "Age" in df_scaled.columns else 16
     age_max = int(df_scaled["Age"].max()) if "Age" in df_scaled.columns else 40
-    age_cap = cols[2].slider("Maximum Age", min_value=age_min, max_value=age_max, value=min(age_max, 27), step=1)
-
+    age_cap = c_age.slider("Maximum Age", min_value=age_min, max_value=age_max, value=min(age_max, 27), step=1)
+    # Minutes Slider
     min_minutes = int(df_scaled["Minutes"].min()) if "Minutes" in df_scaled.columns else 0
     max_minutes = int(df_scaled["Minutes"].max()) if "Minutes" in df_scaled.columns else 3000
-    minutes_thr = cols[3].slider("Minimum Minutes", min_value=min_minutes, max_value=max_minutes, value=min(900, max_minutes), step=30)
+    minutes_thr = c_min.slider("Minimum Minutes", min_value=min_minutes, max_value=max_minutes, value=min(900, max_minutes), step=30)
+    # Top n
+    top_n = c_topn.number_input("Number of Players to Find", min_value=5, max_value=50, value=10, step=5)
 
-    top_n = cols[4].number_input("Number of Players to Find", min_value=5, max_value=100, value=15, step=5)
-
-    extra_cols = st.multiselect(
-        "Extra columns",
-        options=[c for c in ["Player","Nation","Age","League","Squad","Pos","Minutes","Market_Value_TM"] if c in df_scaled.columns],
-        default=[c for c in ["Age","League","Squad","Pos","Minutes"] if c in df_scaled.columns]
-    )
+    feature_candidates = FEATURES_ALLOWED  # defined in ranking.py
 
     feat_cols = st.multiselect(
-        "Feature columns for scoring",
+        "Select the skills you want to consider when evaluating top players",
         options=feature_candidates,
-        default=feature_candidates[:4] if feature_candidates else []
+        default=FEATURES_DEFAULT,   
+        max_selections=12,
     )
-
-    run = st.button("Search", type="primary")
+    
+    leagues = None if league_choice == "All" else [league_choice]
+    
+    run = st.button("Search")
 
     if run:
         df_out = top_players(
-            features={c: 1.0 for c in feat_cols},  # your function already handles weights/score
-            n=int(top_n),
+            features={c:1.0 for c in feat_cols}, 
+            top_n=int(top_n),
             pos=position if position else None,
             max_age=age_cap,
             min_minutes=minutes_thr,
-            extra_cols=tuple(["Player"] + extra_cols),  # your function includes Player anyway
-            df=None,  # uses the registered df_scaled
+            leagues=leagues,           
+            df=df_scaled, 
         )
         st.dataframe(df_out, use_container_width=True)
         st.caption(f"{len(df_out)} players shown.")
@@ -196,7 +230,7 @@ with tab1:
 # Tab 2: Compare (Radar)
 # ===========================
 with tab2:
-    st.subheader("Compare Players — Radar")
+    st.subheader("Compare Players")
 
     player_options = sorted(df_scaled["Player"].dropna().unique().tolist()) if "Player" in df_scaled.columns else []
     selected_players = st.multiselect("Players to compare (supports up to 5 players)", options=player_options, max_selections=6)

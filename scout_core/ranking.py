@@ -2,44 +2,58 @@ from __future__ import annotations
 import pandas as pd
 from typing import Iterable, Optional
 import re
-
 from .data import get_df_scaled
 from .market_value import cached_market_value
 
+DEFAULT_EXTRA_COLS = ["Player","Nation","Age","League","Squad","Pos","Minutes"]
+
+FEATURES_ALLOWED = [
+    "goal_scoring",
+    "goal_efficacy",
+    "shooting",
+    "passing_influence",
+    "passing_accuracy",
+    "goal_creation",
+    "possession_influence",
+    "progression",
+    "take_ons",
+    "aerial_influence",
+    "defensive_influence",
+    "discipline_and_consistency",
+]
+
+FEATURES_DEFAULT = ["goal_scoring","goal_efficacy","shooting"]
+
 def top_players(
-    features: dict,                        
-    n: int = 20,
-    df: pd.DataFrame | None = None,
-    pos: str | list[str] | None = None,      # 'FW' or ['FW','AM']
-    pos_col: str = "Pos",
-    max_age: int | None = None,
-    min_minutes: int | None = None,
-    normalize_weights: bool = False,         # set True if you want weights to sum to 1
-    round_to: int = 3,
-    extra_cols: tuple = ("Player","Nation","Age","League","Squad","Pos","Minutes"),
-    fetch_market_value: bool = True,         # By default it scrapes Transfermarkt market value
-    market_value_col: str = "Market_Value_TM"
+    df,
+    *,
+    pos=None,
+    max_age=None,
+    min_minutes=None,
+    top_n=15,
+    leagues=None,
+    features=None,           # can be a list or dict
+    extra_cols=None,         # if None we’ll use EXTRA_COLS_DEFAULT
+    fetch_market_value=True,
+    round_to=2,
 ):
     """
-    Rank players by a weighted sum of composite features using the global `df_scaled`.
-    - Missing feature columns are created as 0 (no reweighting by default).
-    - Optional filters: position substring match, max_age, min_minutes.
-    - Adds Transfermarkt market value for the top N players (cached) if fetch_market_value=True.
+    Rank players with optional filters and feature-based scoring. Adds Transfermarkt market value for the top N players (cached) if fetch_market_value=True.
     """
-    # ---- 0) Get the data ----
-    if df is None:
-        df = get_df_scaled()  
+    # ---- a) Get the data ----
+    data = df.copy()
 
-    # score column name
-    score_name = 'SCORE'
+    # ---- filters ----
+    mask = pd.Series(True, index=data.index)
 
-    # -------- filters --------
-    mask = pd.Series(True, index=df.index)
-
-    if pos is not None and pos_col in df.columns:
+    # Optional league filter
+    if leagues:
+        mask &= data["League"].isin(leagues)
+    
+    if pos is not None and "Pos" in data.columns:
         pos_list = [pos] if isinstance(pos, str) else list(pos)
         pattern = "|".join(map(re.escape, pos_list))          # substring match
-        mask &= df[pos_col].astype(str).str.contains(pattern, case=False, na=False)
+        mask &= data["Pos"].astype(str).str.contains(pattern, case=False, na=False)
 
     if max_age is not None and "Age" in df.columns:
         mask &= pd.to_numeric(df["Age"], errors="coerce").le(max_age)
@@ -50,35 +64,60 @@ def top_players(
     data = df.loc[mask].copy()
 
     # -------- features & score --------
-    feat_cols = list(features.keys())
-    for c in feat_cols:
-        if c not in data.columns:
-            data[c] = 0.0  # missing -> 0
+    if features is None:
+        feat_cols = FEATURES_DEFAULT[:]                
+        weights = {c: 1.0 for c in feat_cols}
+    elif isinstance(features, dict):
+        weights = {c: float(w) for c, w in features.items()}
+        feat_cols = list(weights.keys())
+    else:  # list / tuple / set
+        feat_cols = list(features)
+        weights = {c: 1.0 for c in feat_cols}
 
+    # keep only allowed + present columns, and cap to 12
+    feat_cols = [c for c in feat_cols if c in FEATURES_ALLOWED and c in data.columns][:12]
+    weights = {c: weights[c] for c in feat_cols}
+
+    if not feat_cols:
+        raise ValueError("No valid scoring features selected/found in dataset.")   
+    
     X = data[feat_cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
 
-    w = pd.Series(features, index=feat_cols, dtype=float)
-    if normalize_weights and w.sum() != 0:
+    w = pd.Series(weights, index=feat_cols, dtype=float)
+    if w.sum() != 0:
         w = w / w.sum()
 
+    score_name = "SCORE"
     data[score_name] = (X * w).sum(axis=1).round(round_to)
 
-    # -------- sort, cut to top N --------
-    data = data.sort_values(score_name, ascending=False).head(n).copy()
+    # ---- sort, cut to top N ----
+    out = (
+        data.sort_values(score_name, ascending=False)
+            .head(top_n)
+            .copy()
+    )
 
-    # -------- add Transfermarkt market value --------
-    if fetch_market_value and "Player" in data.columns:
-        unique_names = data["Player"].astype(str).fillna("").unique().tolist()
+    # ---- add Transfermarkt market value ----
+    mv_col = "Market Value"
+    if fetch_market_value and "Player" in out.columns:
+        unique_names = out["Player"].astype(str).fillna("").unique().tolist()
         mv_map = {name: cached_market_value(name) if name else None for name in unique_names}
-        data[market_value_col] = data["Player"].map(mv_map)
+        out[mv_col] = out["Player"].map(mv_map)
+        
+    # ---- columns to show: defaults for extra cols + features + score ----
+    if extra_cols is None:
+        extra_cols = DEFAULT_EXTRA_COLS
 
-    # -------- order: extra_cols → market_value → feature cols → score --------
-    base_cols = [c for c in extra_cols if c in data.columns]
-    mv_cols   = [market_value_col] if fetch_market_value else []
-    feat_cols_present = [c for c in feat_cols if c in data.columns]
-
-    show_cols = list(dict.fromkeys(base_cols + mv_cols + feat_cols_present + [score_name]))
-    out = data.loc[:, show_cols].reset_index(drop=True)
+    base_cols = [c for c in extra_cols if c in out.columns]
+    feat_cols_present = [c for c in feat_cols if c in out.columns]
     
-    return out
+    # Ensure market value column is visible if we created it
+    if mv_col in out.columns and mv_col not in base_cols:
+        base_cols = base_cols + [mv_col]
 
+    show_cols = ["Player"] + base_cols + feat_cols_present + [score_name]
+    show_cols = list(dict.fromkeys(show_cols))  
+
+    out = out.loc[:, show_cols].reset_index(drop=True)
+
+    return out

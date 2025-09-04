@@ -31,25 +31,45 @@ The project is built in **Python** and deployed with **Streamlit Cloud**.
 ## 🏗️ Project Structure
 
 football_scout/
+
 │
+
 ├── assets/                   # Stored datasets and static files
+
 │
+
 ├── scout_core/               # Core logic
+
 │   ├── __init__.py
+
 │   ├── data.py               # Dataset already scraped, cleaned and processed
+
 │   ├── market_value.py       # Market value scraper (may fail in public envs)
+
 │   ├── radar.py              # Radar chart generation
+
 │   └── ranking.py            # Ranking players by metrics
+
 │
+
 ├── 1. Data Collection.ipynb       # Data scraping
+
 ├── 2. Data Cleaning and EDA.ipynb # Cleaning & exploratory analysis
+
 ├── 3. Scout.ipynb                  # Defining scouting rules
+
 ├── 4. Web App.ipynb                # Testing scout and developing the Streamlit app
+
 │
+
 ├── app.py                   # Streamlit app entry point
+
 ├── requirements.txt         # Project dependencies
+
 ├── runtime.txt              # Runtime for deployment
+
 ├── .gitignore               # Git ignore rules
+
 └── README.md                # Project documentation
 
 

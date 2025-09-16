@@ -63,7 +63,7 @@ def radar_plotly(df_long: pd.DataFrame, fill=True, label_map=None):
             mv_val = None
 
         mv_txt = f"{float(mv_val):.1f} M€" if mv_val is not None and pd.notna(mv_val) else "N/A"
-        legend_name = f"{player}{', ' + str(age) if age is not None else ''}<br>{squad or 'N/A'}<br>{mv_txt}"
+        legend_name = f"{player}{', ' + str(int(age)) + 'y' if age is not None else ''}"f"<br>{mv_txt}{' - ' + squad or 'N/A'}"
 
         fig.add_trace(go.Scatterpolar(
             r=r_closed, theta=theta_closed,
@@ -75,7 +75,15 @@ def radar_plotly(df_long: pd.DataFrame, fill=True, label_map=None):
 
     fig.update_layout(
         polar=dict(radialaxis=dict(range=[0, 1], tickvals=[0.2, 0.4, 0.6, 0.8])),
-        showlegend=True, template="plotly_white",
+        showlegend=True, 
+        template="plotly_white",
+        legend=dict(
+            orientation="h",       # horizontal legend
+            yanchor="bottom",      # anchor at bottom or top
+            y=1.1,                 # move above the plot (use -0.2 to put below)
+            xanchor="center",      
+            x=0.5                  # center it horizontally
+        ),
         margin=dict(l=20, r=20, t=60, b=20)
     )
     return fig

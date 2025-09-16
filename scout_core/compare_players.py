@@ -5,7 +5,7 @@ FEATURES_12 = [
     "Goal Scoring","Goal Efficacy","Shooting",
     "Passing Influence","Passing Accuracy","Goal Creation",
     "Possession Influence","Progression","Dribling",
-    "Defensive Pressure","Defensive Influence","Discipline and Consistency"
+    "Aerial Influence","Defensive Influence","Discipline and Consistency"
 ]
 
 def radar_data(df: pd.DataFrame, players, player_col="Player",

@@ -211,7 +211,16 @@ with tab1:
             res.index = res.index + 1       # shift index to start at 1
             res.index.name = "Rank"         # rename index
             
-            st.dataframe(res, use_container_width=True)
+            st.dataframe(
+                res, 
+                use_container_width=True,
+                column_config={
+                    "Market Value (M€)": st.column_config.NumberColumn(
+                        "Market Value (€)",
+                        format="€ %.1f M",  # one decimal, in millions
+                    )
+                }
+            )
 
         except ValueError as e:
             st.error(str(e))

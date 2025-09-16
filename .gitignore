@@ -1,18 +1,15 @@
-# --------------------
-# Project-specific
-# --------------------
+# ---- Project-specific (keep data out of GitHub) ----
 .fs_data/
 *.parquet
+!assets/df_scaled.parquet
+!assets/sample_df_scaled.parquet
 *.csv
 *.xlsx
 *.xls
-
 data/
 datasets/
 
-# --------------------
-# Python artifacts
-# --------------------
+# ---- Python artifacts ----
 __pycache__/
 *.pyc
 *.pyo
@@ -20,27 +17,19 @@ __pycache__/
 *.pkl
 *.db
 
-# --------------------
-# Jupyter
-# --------------------
+# ---- Jupyter ----
 .ipynb_checkpoints/
 
-# --------------------
-# Virtual environments
-# --------------------
+# ---- Virtual environments ----
 .env
 .venv/
 env/
 venv/
 *.egg-info/
 
-# --------------------
-# OS/editor junk
-# --------------------
+# ---- OS / editor junk ----
 .DS_Store
 Thumbs.db
 
-# --------------------
-# Streamlit
-# --------------------
+# ---- Streamlit secrets (if you add them later) ----
 .streamlit/secrets.toml

@@ -3,32 +3,33 @@ import pandas as pd
 import io
 from pathlib import Path
 import base64
-from scout_core import set_df_scaled, top_players, FEATURES_ALLOWED, FEATURES_DEFAULT, radar_dodecagon
+
+import plotly.io as pio
+from scout_core import radar_data, radar_plotly
+from scout_core import top_players, TopPlayersParams, FEATURE_MAP
 
 BASE_DIR = Path(__file__).resolve().parent
-DF_PATH = BASE_DIR / "assets" / "df_scaled.parquet"
-FALLBACK_PATH = BASE_DIR / "assets" / "sample_df_scaled.parquet"
 
-# Load dataset
-if DF_PATH.exists():
-    df_scaled = pd.read_parquet(DF_PATH)
-elif FALLBACK_PATH.exists():
-    st.warning("Using fallback sample dataset.")
-    df_scaled = pd.read_parquet(FALLBACK_PATH)
-else:
-    st.error("No dataset found.")
-    st.stop()
-    
-def save_df_scaled(df: pd.DataFrame):
-    df.to_parquet(DF_PATH, index=False)
-
-def load_saved_df_scaled():
-    if DF_PATH.exists():
-        return pd.read_parquet(DF_PATH)
-    return None
+# -------------------------------
+# I. Page config
+# -------------------------------
 
 st.set_page_config(page_title="Football Scout", layout="wide")
 
+st.markdown(
+    """
+    <style>
+    /* reduce the big top padding Streamlit applies */
+    .block-container {
+        padding-top: 1.5rem;
+        padding-bottom: 1rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# --- Banner ---
 # --- Paths ---
 BANNER_PATH = BASE_DIR / "assets" / "cover.png"
 
@@ -39,7 +40,7 @@ else:
     b64 = base64.b64encode(BANNER_PATH.read_bytes()).decode()
 
     st.markdown(
-        f"""
+         f"""
         <style>
         .banner-wrap {{
             position: relative;
@@ -55,11 +56,11 @@ else:
             display: block;
         }}
         .banner-overlay {{
-            position: absolute; inset: 0;
+            position: absolute; inset: 0;            
             background: rgba(0,0,0,0.28);   /* transparency */
         }}
         .banner-text {{
-            position: absolute; left: 40px; top: 50%;
+            position: absolute; left: 40px; top: 50%;            
             transform: translateY(-50%);
             color: #fff; text-align: left;
             padding: 0 12px;
@@ -92,7 +93,7 @@ else:
             border-bottom: 3px solid #d32f2f; /* thicker underline */
         }}
         </style>
-
+    
         <div class="banner-wrap">
             <img class="banner-img" src="data:image/png;base64,{b64}" alt="banner"/>
             <div class="banner-overlay"></div>
@@ -104,63 +105,23 @@ else:
         """,
         unsafe_allow_html=True,
     )
-    
-# ---------------------------
-# Data loading (one-time)
-# ---------------------------
-@st.cache_data(show_spinner=True)
-def load_df(file) -> pd.DataFrame:
-    if file.name.endswith(".parquet"):
-        return pd.read_parquet(file)
-    elif file.name.endswith(".csv"):
-        return pd.read_csv(file)
-    else:
-        # default to excel
-        return pd.read_excel(file)
 
-if 0 == 1: # Sidebar unavailable. When needed adjust to: 0 == 0
-    with st.sidebar:
-        st.header("Data")
-        # 1) Try auto-load from disk
-        df_scaled = None
-        if DF_PATH.exists():
-            df_scaled = pd.read_parquet(DF_PATH)
+# ------------------------------
+# III. Helpers
+# -------------------------------
 
-        # 2) If not found, ask for upload
-        if df_scaled is None:
-            df_file = st.file_uploader(
-                "Upload your df_scaled file",
-                type=["parquet", "csv", "xlsx", "xls"]
-            )
-            if df_file:
-                df_scaled = load_df(df_file)        
-                df_scaled.to_parquet(DF_PATH, index=False)  
-                set_df_scaled(df_scaled)
-                st.success("File uploaded and saved. It will auto-load next time.")
-                st.rerun()
-            else:
-                st.info("Please upload your preprocessed df_scaled to begin.")
-                st.stop()
-        else:
-            set_df_scaled(df_scaled)
-            st.success("Loaded stored df_scaled.parquet")
+@st.cache_data
+def load_df(path) -> pd.DataFrame:
+    return pd.read_parquet(path)
 
-            if st.button("Forget stored dataset"):
-                DF_PATH.unlink(missing_ok=True)
-                st.rerun()
+POSITION_ORDER = ["Centre Back (CB)","Right Back (RB)","Left Back (LB)","Defensive Midfielder (DM)","Center Midfielder (CM)",
+                  "Attacking Midfielder (AM)","Rigth Winger (RW)","Left Winger (LW)","Center Forward (CF)"]
 
-# Safety guard (use df_scaled, not df_file)
-if df_scaled is None:
-    st.stop()
-
-# Some light helpers
-INFO_COLS = {"Player","Nation","Age","League","Squad","Pos","Minutes","Market_Value_TM"}
-numeric_cols = sorted([c for c in df_scaled.columns if pd.api.types.is_numeric_dtype(df_scaled[c])])
-feature_candidates = [c for c in numeric_cols if c not in INFO_COLS]
 
 # ---------------------------
-# UI Tabs
+# Tabs
 # ---------------------------
+
 tab1, tab2 = st.tabs(["🏆 Find Top Players", "📊 Compare Players"])
 
 # ===========================
@@ -169,88 +130,186 @@ tab1, tab2 = st.tabs(["🏆 Find Top Players", "📊 Compare Players"])
 with tab1:
     st.subheader("Find Top Players")
 
-    # ----- Top filters row (single line) -----
-    # options from data
-    pos_opts     = sorted(df_scaled["Pos"].dropna().unique().tolist()) if "Pos"    in df_scaled.columns else []
-    league_opts  = sorted(df_scaled["League"].dropna().unique().tolist()) if "League" in df_scaled.columns else []
+    df_tab1 = load_df("assets/df_tab1.parquet")
 
-    # 5 columns across that row (League | Position | Age | Minutes | Top N)
-    c_league, c_pos, c_age, c_min, c_topn = st.columns([1.2, 1.2, 1.4, 1.4, 1])
+    # ---------- Filters in 5 columns ----------
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
 
-    # League (left-most). "All" means no filter.
-    league_choice = c_league.selectbox(
-        "League",
-        options=(["All"] + league_opts) if league_opts else ["All"],
-        index=0,
-    )
-    # Position Selectbox
-    position = c_pos.selectbox(
-        "Position",
-        options=([""] + pos_opts),
-        index=0,
-    )
+    # League filter
+    with c1:
+        league_opts = ["All"] + sorted(df_tab1["League"].dropna().unique().tolist())
+        league_choice = st.selectbox("League", league_opts, index=0, help="Optional filter by league.")
+        leagues = None if league_choice == "All" else [league_choice]
+
+    # Position filter
+    with c2:
+        present = set(df_tab1["Position"].dropna().unique().tolist())
+        pos_opts = ["All"] + [p for p in POSITION_ORDER if p in present]
+        position = st.selectbox("Position", pos_opts, index=0, help="Optional filter by position")
+        pos_filter = None if position == "All" else position
+    
     # Age Slider
-    age_min = int(df_scaled["Age"].min()) if "Age" in df_scaled.columns else 16
-    age_max = int(df_scaled["Age"].max()) if "Age" in df_scaled.columns else 40
-    age_cap = c_age.slider("Maximum Age", min_value=age_min, max_value=age_max, value=min(age_max, 27), step=1)
+    with c3:
+        min_age, max_age = st.slider(
+            "Age", 
+            min_value=16, 
+            max_value=40, 
+            value=(16,27),
+            step=1,
+            help="Define desired age interval to be filtered.")
+    
     # Minutes Slider
-    min_minutes = int(df_scaled["Minutes"].min()) if "Minutes" in df_scaled.columns else 0
-    max_minutes = int(df_scaled["Minutes"].max()) if "Minutes" in df_scaled.columns else 3000
-    minutes_thr = c_min.slider("Minimum Minutes", min_value=min_minutes, max_value=max_minutes, value=min(900, max_minutes), step=30)
-    # Top n
-    top_n = c_topn.number_input("Number of Players to Find", min_value=5, max_value=50, value=10, step=5)
+    with c4:
+        min_minutes, max_minutes = st.slider(
+            "Minutes", 
+            min_value=300, 
+            max_value=int(df_tab1["Minutes"].max()), 
+            value=(1200,int(df_tab1["Minutes"].max())), 
+            step=50,
+            help="Define minimum minutes the player must have in last season to be filtered."
+        )
 
-    feature_candidates = FEATURES_ALLOWED  # defined in ranking.py
+    # Market Value slider
+    with c5:
+        mv_max_possible = float(pd.to_numeric(df_tab1["Market Value (M€)"], errors="coerce").max() or 0.0)
+        min_MV, max_MV = st.slider(
+            "Market Value (M€)",
+            min_value=0.0,
+            max_value=max(0.1, mv_max_possible),
+            value=(0.0, max(0.1, mv_max_possible)),
+            step=0.1,
+            help="Filter by market value. Players with unknown value are kept."
+        )
+    
+    # Top N players
+    with c6:
+        top_n = st.number_input("Number of Players", min_value=5, max_value=25, value=10, step=5, help="Select number of top players you want to list.")
 
-    feat_cols = st.multiselect(
+    # ---------- Skills selector (full width below other filters) ----------
+    selected_features = st.multiselect(
         "Select the skills you want to consider when evaluating top players",
-        options=feature_candidates,
-        default=FEATURES_DEFAULT,   
-        max_selections=12,
+        options=list(FEATURE_MAP.keys()),
+        default=None,
+        max_selections=5,
     )
-    
-    leagues = None if league_choice == "All" else [league_choice]
-    
+
+    # ---------- Run ----------
     run = st.button("Search")
 
     if run:
-        df_out = top_players(
-            features={c:1.0 for c in feat_cols}, 
-            top_n=int(top_n),
-            pos=position if position else None,
-            max_age=age_cap,
-            min_minutes=minutes_thr,
-            leagues=leagues,           
-            df=df_scaled, 
-        )
-        st.dataframe(df_out, use_container_width=True)
-        st.caption(f"{len(df_out)} players shown.")
+        # keep your league filter outside top_players (function doesn't filter by league)
+        df_work = df_tab1 if leagues is None else df_tab1[df_tab1["League"].isin(leagues)]
+
+        try:
+            params = TopPlayersParams(
+                n=top_n,
+                pos=pos_filter,
+                min_age=min_age,
+                max_age=max_age,
+                min_minutes=min_minutes,
+                max_minutes=max_minutes,
+                min_MV=min_MV,
+                max_MV=max_MV,
+            )
+
+            res = top_players(
+                df=df_work,
+                selected_features=selected_features,
+                params=params,
+            )
+
+            res.index = res.index + 1       # shift index to start at 1
+            res.index.name = "Rank"         # rename index
+            
+            st.dataframe(res, use_container_width=True)
+
+        except ValueError as e:
+            st.error(str(e))
 
 # ===========================
 # Tab 2: Compare (Radar)
 # ===========================
-with tab2:
+
+with tab2:  
+    df_tab2 = load_df("assets/df_tab2.parquet")
+    
     st.subheader("Compare Players")
 
-    player_options = sorted(df_scaled["Player"].dropna().unique().tolist()) if "Player" in df_scaled.columns else []
-    selected_players = st.multiselect("Players to compare (supports up to 5 players)", options=player_options, max_selections=6)
+    # --- keep accumulated selections in session ---
+    if "selected_players_tab2" not in st.session_state:
+        st.session_state.selected_players_tab2 = []
 
+    def dedupe_keep_order(seq):
+        seen, out = set(), []
+        for x in seq:
+            if x not in seen:
+                seen.add(x); out.append(x)
+        return out
+
+    def add_players(picks):
+        if picks:
+            st.session_state.selected_players_tab2 = dedupe_keep_order(
+                st.session_state.selected_players_tab2 + list(picks)
+            )
+
+    # ---------- Top row: League | Squad | Position | Player ----------
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        leagues = [""] + sorted(df_tab2["League"].dropna().unique().tolist())
+        league = st.selectbox("League", leagues, index=0, key="t2_league")
+
+    df_l = df_tab2 if league == "" else df_tab2[df_tab2["League"] == league]
+
+    with c2:
+        squads = [""] + (sorted(df_l["Squad"].dropna().unique().tolist()) if league else [])
+        squad = st.selectbox("Squad", squads, index=0, key="t2_squad",
+                             disabled=(league == ""))
+
+    df_s = df_l if (squad == "" or league == "") else df_l[df_l["Squad"] == squad]
+
+    with c3:
+        positions = [""] + (sorted(df_s["Position"].dropna().unique().tolist()) if squad else [])
+        position = st.selectbox("Position", positions, index=0, key="t2_pos",
+                                disabled=(squad == ""))
+
+    df_p = df_s if (position == "" or squad == "") else df_s[df_s["Position"] == position]
+
+    with c4:
+        # Player picker in the cascade path (enabled once Squad chosen)
+        player_opts = sorted(df_p["Player"].dropna().unique().tolist()) if squad else []
+        picked_chain = st.multiselect("Player", player_opts, default=[],
+                                      key="t2_chain_players", disabled=(squad == ""),
+                                      placeholder="Select one or more…")
+        add_players(picked_chain)
+
+    # ---------- Players to compare ----------
+    search_pool = df_p if position != "" else (df_s if squad != "" else (df_l if league != "" else df_tab2))
+    pool_names = sorted(search_pool["Player"].dropna().unique().tolist())
+    current = st.session_state.selected_players_tab2
+
+    # union = current selections + filtered pool (to keep selections visible)
+    options_for_box = dedupe_keep_order(current + pool_names)
+
+    st.markdown("**Players to compare**")
+    st.session_state.selected_players_tab2 = st.multiselect(
+        "Type to search and manage your list",
+        options=options_for_box,
+        default=current,
+        key="t2_selected_players_box",
+        placeholder="Start typing a name…",
+        help="Suggestions respect the filters above. Unselect to remove."
+    )
+
+    # ---------- Draw  ----------
+    players = st.session_state.selected_players_tab2
+    fill = st.checkbox("Fill areas", value=True)
     draw = st.button("Draw radar")
 
     if draw:
-        if len(selected_players) < 2:
-            st.warning("Pick at least two players.")
+        if players:
+            df_long = radar_data(df_tab2, players)
+            fig = radar_plotly(df_long, fill=fill)
+            st.plotly_chart(fig, use_container_width=True)
         else:
-            fig = radar_dodecagon(
-                players=selected_players,
-            )
-           
-            # Save fig to an in-memory PNG and control its display size
-            buf = io.BytesIO()
-            fig.savefig(buf, format="png", dpi=200, bbox_inches="tight")
-            buf.seek(0)
-
-            # Center the plot and control its display width
-            left, mid, right = st.columns([1, 3, 1])
-            with mid:
-                st.image(buf, width=520)  # adjust width (e.g. 480–600) to tast
+            st.info("Select at least one player.")

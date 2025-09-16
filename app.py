@@ -135,7 +135,7 @@ with tab1:
     df_tab1 = load_df("assets/df_tab1.parquet")
 
     # ---------- Filters in 5 columns ----------
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    c1, c2, c3, c4, c5 = st.columns(5)
 
     # League filter
     with c1:
@@ -160,31 +160,22 @@ with tab1:
             step=1,
             help="Define desired age interval to be filtered.")
     
-    # Minutes Slider
-    with c4:
-        min_minutes, max_minutes = st.slider(
-            "Minutes", 
-            min_value=300, 
-            max_value=int(df_tab1["Minutes"].max()), 
-            value=(1200,int(df_tab1["Minutes"].max())), 
-            step=50,
-            help="Define minimum minutes the player must have in last season to be filtered."
-        )
-
     # Market Value slider
-    with c5:
-        mv_max_possible = float(pd.to_numeric(df_tab1["Market Value (M€)"], errors="coerce").max() or 0.0)
-        min_MV, max_MV = st.slider(
-            "Market Value (M€)",
-            min_value=0.0,
-            max_value=max(0.1, mv_max_possible),
-            value=(0.0, max(0.1, mv_max_possible)),
-            step=0.1,
-            help="Filter by market value. Players with unknown value are kept."
+    with c4:
+        mv_max_possible = float(pd.to_numeric(df_tab1["Market Value (M€)"], errors="coerce").max() or 200.0)
+        mv_max_possible = int(round(mv_max_possible))
+    
+        max_MV = st.number_input(
+            "Maximum Market Value (M€)",
+            min_value=0,
+            max_value=mv_max_possible,
+            value=50,   # default value
+            step=5,
+            key="mv_max"
         )
     
     # Top N players
-    with c6:
+    with c5:
         top_n = st.number_input("Number of Players", min_value=5, max_value=25, value=10, step=5, help="Select number of top players you want to list.")
 
     # ---------- Skills selector (full width below other filters) ----------
@@ -208,9 +199,6 @@ with tab1:
                 pos=pos_filter,
                 min_age=min_age,
                 max_age=max_age,
-                min_minutes=min_minutes,
-                max_minutes=max_minutes,
-                min_MV=min_MV,
                 max_MV=max_MV,
             )
 
@@ -264,14 +252,20 @@ with tab2:
     df_l = df_tab2 if league == "" else df_tab2[df_tab2["League"] == league]
 
     with c2:
-        squads = [""] + (sorted(df_l["Squad"].dropna().unique().tolist()) if league else [])
+        squads = (sorted(df_l["Squad"].dropna().unique().tolist()) if league else [])
         squad = st.selectbox("Squad", squads, index=0, key="t2_squad",
                              disabled=(league == ""))
 
     df_s = df_l if (squad == "" or league == "") else df_l[df_l["Squad"] == squad]
 
     with c3:
-        positions = [""] + (sorted(df_s["Position"].dropna().unique().tolist()) if squad else [])
+        positions = (
+            sorted(
+                df_s["Position"].dropna().unique().tolist(),
+                key=lambda x: POSITION_ORDER.index(x) if x in POSITION_ORDER else len(POSITION_ORDER)
+            )
+            if squad else []
+        )
         position = st.selectbox("Position", positions, index=0, key="t2_pos",
                                 disabled=(squad == ""))
 

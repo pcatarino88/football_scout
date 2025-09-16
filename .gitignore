@@ -1,14 +1,3 @@
-# ---- Project-specific (keep data out of GitHub) ----
-.fs_data/
-*.parquet
-!assets/df_scaled.parquet
-!assets/sample_df_scaled.parquet
-*.csv
-*.xlsx
-*.xls
-data/
-datasets/
-
 # ---- Python artifacts ----
 __pycache__/
 *.pyc

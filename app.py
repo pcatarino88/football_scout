@@ -99,7 +99,16 @@ else:
             <div class="banner-overlay"></div>
             <div class="banner-text">
                 <h1>Football Scout</h1>
-                <p>Scout players from 14 different leagues with interactive charts. <br> Developed by Pedro Catarino.</p>
+                <p>
+                    Scout players from +10 leagues with interactive charts.<br> 
+                    Developed by 
+                    <a href="https://www.linkedin.com/in/pedrofcatarino/" target="_blank" style="color:#fff; text-decoration:underline; display:inline-flex; align-items:center; gap:6px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="display:inline-block; vertical-align:middle;">
+                          <path d="M20.447 20.452h-3.554v-5.569c0-1.329-.027-3.039-1.852-3.039-1.853 0-2.136 1.448-2.136 2.945v5.663H9.351V9h3.414v1.561h.049c.476-.9 1.637-1.852 3.366-1.852 3.599 0 4.264 2.37 4.264 5.455v6.288zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zM6.999 20.452H3.671V9h3.328v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.226.792 24 1.771 24h20.454C23.2 24 24 23.226 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/>
+                        </svg>
+                        Pedro Catarino
+                    </a>.
+                </p>
             </div>
         </div>
         """,

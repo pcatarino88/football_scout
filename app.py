@@ -14,7 +14,10 @@ BASE_DIR = Path(__file__).resolve().parent
 # I. Page config
 # -------------------------------
 
-st.set_page_config(page_title="Football Scout", layout="wide")
+st.set_page_config(
+    page_title="Football Scout", 
+    page_icon="⚽",
+    layout="wide")
 
 st.markdown(
     """
@@ -100,7 +103,7 @@ else:
             <div class="banner-text">
                 <h1>Football Scout</h1>
                 <p>
-                    Scout players from +10 leagues with interactive charts.<br> 
+                    Scout players from +10 leagues with interactive charts<br> 
                 </p>
             </div>
         </div>
@@ -118,6 +121,21 @@ def load_df(path) -> pd.DataFrame:
 
 POSITION_ORDER = ["Centre Back (CB)","Right Back (RB)","Left Back (LB)","Defensive Midfielder (DM)","Center Midfielder (CM)",
                   "Attacking Midfielder (AM)","Rigth Winger (RW)","Left Winger (LW)","Center Forward (CF)"]
+
+LEAGUE_NAMES = {
+    "eng1": "England - Premier League",
+    "spa1": "Spain - La Liga",
+    "ger1": "Germany - Bundesliga",
+    "ita1": "Italy - Serie A",
+    "fra1": "France - Ligue 1",  
+    "net1": "Netherlands - Eredivisie",
+    "por1": "Portugal - Primeira Liga",
+    "bel1": "Belgium - Pro League",
+    "bra1": "Brazil - Série A",
+    "arg1": "Argentina - Liga Profesional",
+    "eng2": "England - Championship",
+    "ita2": "Italy - Serie B"
+}
 
 
 # ---------------------------
@@ -139,9 +157,21 @@ with tab1:
 
     # League filter
     with c1:
-        league_opts = ["All"] + sorted(df_tab1["League"].dropna().unique().tolist())
-        league_choice = st.selectbox("League", league_opts, index=0, help="Optional filter by league.")
-        leagues = None if league_choice == "All" else [league_choice]
+        # Unique league codes from the DF
+        league_codes = [code for code in LEAGUE_NAMES if code in df_tab1["League"].unique()]
+        # Build display options and reverse map (display -> code)
+        display_options = ["All"] + [LEAGUE_NAMES[code] for code in league_codes]
+        reverse_map = {LEAGUE_NAMES[code]: code for code in league_codes}
+        reverse_map["All"] = "All"
+        # UI select (default = All)
+        league_display_choice = st.selectbox(
+            "League",
+            display_options,
+            index=0,
+            help="Optional filter by league."
+        )
+        # Convert back to codes for filtering
+        leagues = None if league_display_choice == "All" else [reverse_map[league_display_choice]]
 
     # Position filter
     with c2:
@@ -179,12 +209,43 @@ with tab1:
         top_n = st.number_input("Number of Players", min_value=5, max_value=25, value=10, step=5, help="Select number of top players you want to list.")
 
     # ---------- Skills selector (full width below other filters) ----------
-    selected_features = st.multiselect(
-        "Select desired skills for the player search",
-        options=list(FEATURE_MAP.keys()),
-        default=None,
-        max_selections=5,
-    )
+    MAX_SKILLS = 5
+    skills = list(FEATURE_MAP.keys())
+    
+    st.write("Select desired skills for the player search (max 5)")
+    
+    # map skill -> unique toggle key
+    toggle_keys = {skill: f"skill_toggle_{i}" for i, skill in enumerate(skills)}
+    
+    # callback to enforce the limit
+    def _enforce_skill_limit(changed_key: str):
+        # gather current selection (after the user action)
+        selected_now = [s for s, k in toggle_keys.items() if st.session_state.get(k, False)]
+        if len(selected_now) > MAX_SKILLS:
+            # revert the last change
+            st.session_state[changed_key] = False
+            st.session_state["_skill_limit_msg"] = f"You can select up to {MAX_SKILLS} skills."
+    
+    # layout (2 rows x 6 cols)
+    cols = st.columns(6, gap="small")
+    
+    for i, skill in enumerate(skills):
+        with cols[i % 6]:
+            st.toggle(
+                skill,
+                key=toggle_keys[skill],
+                value=st.session_state.get(toggle_keys[skill], False),
+                on_change=_enforce_skill_limit,
+                args=(toggle_keys[skill],),
+            )
+    
+    # toast message if limit was exceeded
+    if st.session_state.get("_skill_limit_msg"):
+        st.toast(st.session_state["_skill_limit_msg"], icon="⚠️")
+        del st.session_state["_skill_limit_msg"]
+    
+    # final list for downstream use
+    selected_features = [s for s, k in toggle_keys.items() if st.session_state.get(k, False)]
 
     # ---------- Run ----------
     run = st.button("Search")

@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 FEATURES_12 = [
     "Goal Scoring","Goal Efficacy","Shooting",
     "Passing Influence","Passing Accuracy","Goal Creation",
-    "Possession Influence","Progression","Dribbling",
+    "Possession Influence","Progression","Dribling",
     "Defensive Pressure","Defensive Influence","Discipline and Consistency"
 ]
 

@@ -60,10 +60,10 @@ else:
             background: rgba(0,0,0,0.28);   /* transparency */
         }}
         .banner-text {{
-            position: absolute; left: 40px; top: 50%;            
+            position: absolute; left: 20px; top: 50%;            
             transform: translateY(-50%);
             color: #fff; text-align: left;
-            padding: 0 12px;
+            padding: 0;
         }}
         .banner-text h1 {{
             margin: 0 0 6px 0;
@@ -98,8 +98,8 @@ else:
             <img class="banner-img" src="data:image/png;base64,{b64}" alt="banner"/>
             <div class="banner-overlay"></div>
             <div class="banner-text">
-                <h1>Football Scout by Pedro Catarino</h1>
-                <p>Find and compare players from 14 different leagues with interactive charts</p>
+                <h1>Football Scout</h1>
+                <p>Scout players from 14 different leagues with interactive charts. <br> Developed by Pedro Catarino.</p>
             </div>
         </div>
         """,
@@ -187,7 +187,7 @@ with tab1:
 
     # ---------- Skills selector (full width below other filters) ----------
     selected_features = st.multiselect(
-        "Select the skills you want to consider when evaluating top players",
+        "Select desired skills for the player search",
         options=list(FEATURE_MAP.keys()),
         default=None,
         max_selections=5,

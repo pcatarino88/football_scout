@@ -75,12 +75,7 @@ def radar_plotly(df_long: pd.DataFrame, fill=True, label_map=None):
 
     fig.update_layout(
         autosize = True,
-        polar=dict(
-            angularaxis=dict(
-                tickfont=dict(size=10),   # smaller label text
-                rotation=90,              # start at top 
-                ),
-            radialaxis=dict(range=[0, 1], tickvals=[0.2, 0.4, 0.6, 0.8])),
+        polar=dict(radialaxis=dict(range=[0, 1], tickvals=[0.2, 0.4, 0.6, 0.8])),
         showlegend=True, 
         template="plotly_white",
         legend=dict(

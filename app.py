@@ -201,7 +201,8 @@ with tab1:
             max_value=mv_max_possible,
             value=50,   # default value
             step=5,
-            key="mv_max"
+            key="mv_max",
+            help="Define maximum Market Value to be filtered."
         )
     
     # Top N players
@@ -311,22 +312,43 @@ with tab2:
             st.session_state.selected_players_tab2 = dedupe_keep_order(
                 st.session_state.selected_players_tab2 + list(picks)
             )
-
+    
     # ---------- Top row: League | Squad | Position | Player ----------
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        leagues = [""] + sorted(df_tab2["League"].dropna().unique().tolist())
-        league = st.selectbox("League", leagues, index=0, key="t2_league")
-
-    df_l = df_tab2 if league == "" else df_tab2[df_tab2["League"] == league]
+        # Unique league codes from df_tab2
+        league_codes_tab2 = [code for code in LEAGUE_NAMES if code in df_tab2["League"].unique()]
+        # Build display options (simpler league names)
+        display_options_tab2 = ["All"] + [LEAGUE_NAMES[code] for code in league_codes_tab2]
+        reverse_map_tab2 = {LEAGUE_NAMES[code]: code for code in league_codes_tab2}
+        reverse_map_tab2["All"] = "All"
+        # UI select (default = All)
+        league_display_choice_tab2 = st.selectbox(
+            "League",
+            display_options_tab2,
+            index=0,
+            key="t2_league",
+            help="Optional filter by league."
+        )
+        # Convert back to codes for filtering
+        league_code_tab2 = None if league_display_choice_tab2 == "All" else reverse_map_tab2[league_display_choice_tab2]
+        # Apply filter
+        df_l = df_tab2 if league_code_tab2 is None else df_tab2[df_tab2["League"] == league_code_tab2]
 
     with c2:
-        squads = (sorted(df_l["Squad"].dropna().unique().tolist()) if league else [])
-        squad = st.selectbox("Squad", squads, index=0, key="t2_squad",
-                             disabled=(league == ""))
-
-    df_s = df_l if (squad == "" or league == "") else df_l[df_l["Squad"] == squad]
+        squads = (sorted(df_l["Squad"].dropna().astype(str).unique().tolist()))
+        squad_options = ["All"] + squads
+        squad_choice = st.selectbox(
+            "Squad",
+            squad_options,
+            index=0,
+            key="t2_squad",
+            disabled=(league_code_tab2 is None),  # disabled when League = All
+            help="Optional filter by squad."
+        )
+        # Apply squad filter (keep df_l if 'All' or league not selected)
+        df_s = df_l if (league_code_tab2 is None or squad_choice == "All") else df_l[df_l["Squad"] == squad_choice]
 
     with c3:
         positions = (
@@ -334,18 +356,20 @@ with tab2:
                 df_s["Position"].dropna().unique().tolist(),
                 key=lambda x: POSITION_ORDER.index(x) if x in POSITION_ORDER else len(POSITION_ORDER)
             )
-            if squad else []
+            if squad_choice else []
         )
-        position = st.selectbox("Position", positions, index=0, key="t2_pos",
-                                disabled=(squad == ""))
+        position_options = ["All"] + positions
 
-    df_p = df_s if (position == "" or squad == "") else df_s[df_s["Position"] == position]
+        position = st.selectbox("Position", position_options, index=0, key="t2_pos",
+                                help="Optional filter by position.")
+
+        df_p = df_s if position == "All" else df_s[df_s["Position"] == position]
 
     with c4:
         # Player picker in the cascade path (enabled once Squad chosen)
-        player_opts = sorted(df_p["Player"].dropna().unique().tolist()) if squad else []
+        player_opts = sorted(df_p["Player"].dropna().unique().tolist()) if squad_choice else []
         picked_chain = st.multiselect("Player", player_opts, default=[],
-                                      key="t2_chain_players", disabled=(squad == ""),
+                                      key="t2_chain_players", disabled=(squad_choice == ""),
                                       placeholder="Select one or more…")
         add_players(picked_chain)
 
@@ -356,7 +380,7 @@ with tab2:
 
     # union = current selections + filtered pool (to keep selections visible)
     options_for_box = dedupe_keep_order(current + pool_names)
-
+    
     st.markdown("**Players to compare**")
     st.session_state.selected_players_tab2 = st.multiselect(
         "Type to search and manage your list",
@@ -366,7 +390,7 @@ with tab2:
         placeholder="Start typing a name…",
         help="Suggestions respect the filters above. Unselect to remove."
     )
-
+    
     # ---------- Draw  ----------
     players = st.session_state.selected_players_tab2
     fill = st.checkbox("Fill areas", value=True)

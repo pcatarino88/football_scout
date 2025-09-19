@@ -372,6 +372,12 @@ with tab1:
             "Prog Passes_90m": st.column_config.NumberColumn("Prog Pass/90m", help="Progressive passes completed per 90 minutes", format="%.1f", width="small"),
             "Pass Prog Distance_90m": st.column_config.NumberColumn("Pass Dist/90m", help="Progressive passes distance per 90 minutes", format="%.1f", width="small"),
             "Cmp Passes%": st.column_config.NumberColumn("Pass Acc%", help="Completed Passes / Attempted Passes", format="%.1f", width="small"),
+            "Short Cmp%": st.column_config.NumberColumn("Pass Short%", help="Completed Short Passes / Attempted Short Passes", format="%.1f", width="small"),
+            "Medium Cmp%": st.column_config.NumberColumn("Pass Med%", help="Completed Medium Passes / Attempted Medium Passes", format="%.1f", width="small"),
+            "Long Cmp%": st.column_config.NumberColumn("Pass Long%", help="Completed Long Passes / Attempted Long Passes", format="%.1f", width="small"), 
+            "Assists_90m": st.column_config.NumberColumn("Ast/90m", help="Assists per 90 minutes", format="%.2f", width="small"),            
+            "Key Passes_90m": st.column_config.NumberColumn("Key Pass/90m", help="Key Passes per 90 minutes", format="%.2f", width="small"),    
+            "Goal Creating Actions_90m": st.column_config.NumberColumn("GCA/90m", help="Goal Creating Actions per 90 minutes", format="%.2f", width="small"),
         }
         cfg = {k: v for k, v in BASE_CFG.items() if k in df_show.columns}
     

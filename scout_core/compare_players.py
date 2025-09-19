@@ -1,5 +1,6 @@
 import pandas as pd
 import plotly.graph_objects as go
+import textwrap
 
 FEATURES_12 = [
     "Goal Scoring","Goal Efficacy","Shooting",
@@ -39,6 +40,10 @@ def radar_data(df: pd.DataFrame, players, player_col="Player",
     )
     return df_long
 
+def _wrap(s, n=12):
+    # split long labels across lines so they fit on phones
+    return "<br>".join(textwrap.wrap(s, n)) or s
+
 def radar_plotly(df_long: pd.DataFrame, fill=True, label_map=None):
     features = FEATURES_12
     labels = [label_map.get(f, f) for f in features] if label_map else features
@@ -75,7 +80,16 @@ def radar_plotly(df_long: pd.DataFrame, fill=True, label_map=None):
 
     fig.update_layout(
         autosize = True,
-        polar=dict(radialaxis=dict(range=[0, 1], tickvals=[0.2, 0.4, 0.6, 0.8])),
+        polar=dict(
+            angularaxis=dict(
+                tickmode="array",
+                tickvals=FEATURES_12,                         # same order as your data
+                ticktext=[_wrap(c, n=12) for c in FEATURES_12],  # wrapped labels
+                tickfont=dict(size=11),                      # slightly smaller for mobile
+                categoryorder="array",
+                categoryarray=FEATURES_12
+            ),
+            radialaxis=dict(range=[0, 1], tickvals=[0.2, 0.4, 0.6, 0.8])),
         showlegend=True, 
         template="plotly_white",
         legend=dict(

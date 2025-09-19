@@ -72,12 +72,6 @@ def top_players(
     # score (equal weights)
     out[params.score_name] = out[feat_cols].mean(axis=1)
 
-    # rouding
-    round2= ["Score"]+list(FEATURE_MAP.keys())
-    for col in round2:
-        if col in out.columns:
-            out[col] = out[col].round(2)
-
     all_features = [col for cols in FEATURE_MAP.values() for col in cols]
     for col in all_features:
         if col in out.columns:

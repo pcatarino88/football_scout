@@ -12,12 +12,12 @@ FEATURE_MAP: Dict[str, List[str]] = {
         "Shooting": ["Shoots_90m","Shoots on Target_90m","Goals/Shoot","FreeKick Tacker"],
         "Passing Influence": ["Short Cmp_90m","Medium Cmp_90m","Long Cmp_90m","Prog Passes_90m","Pass Prog Distance_90m"],
         "Passing Accuracy": ['Cmp Passes%','Short Cmp%','Medium Cmp%','Long Cmp%'],
-        "Goal Creation": ['Assists_90m','Key Passes_90m','Goal Creating Actions'],     
+        "Goal Creation": ['Assists_90m','Key Passes_90m','Goal Creating Actions_90m'],     
         "Possession Influence": ['Touches_90m','Fouls Suffered_90m','Carries_90m'],
         "Progression": ['Prog Carries_90m','Carries PrgDist_90m'],
         "Dribling": ['Take-Ons Succ_90m','Take-Ons Succ%'],
         "Aerial Influence": ['Aerial Duels_90m','Aerial Duels Won%'],     
-        "Defensive Influence": ['Tackles_90m','Tackles Won_90m','Blocks_90m','Interceptions_90m','Clearances_90m','Ball Recoveries_90m'],
+        "Defensive Influence": ['Tackles Won_90m','Blocks_90m','Interceptions_90m','Clearances_90m','Ball Recoveries_90m'],
         "Discipline and Consistency": ['Own Goals_90m','Errors_90m','Yellow Cards_90m','Red Cards_90m','Fouls Commited_90m','Penalty Commited_90m']
 }
 # ------------------------------------------------------------------------

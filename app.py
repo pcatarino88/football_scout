@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import io
 from pathlib import Path
 import base64
@@ -296,14 +297,67 @@ with tab1:
             res.index = res.index + 1       # shift index to start at 1
             res.index.name = "Rank"         # rename index
             
+            # columns to highlight
+            highlight_cols1 = ["Score"]
+            highlight_cols2 = list(FEATURE_MAP.keys())
+
+            num_cols  = res.select_dtypes("number").columns.tolist() # numeric columns
+            text_cols = [c for c in res.columns if c not in num_cols] # not numeric columns
+
+            def highlight_subset(df,cols1, color1,cols2=None, color2=None):
+                """
+                Apply two highlight styles to different column sets on a pandas.DataFrame.
+                """
+                cols1 = [c for c in (cols1 or []) if c in df.columns]
+                cols2 = [c for c in (cols2 or []) if c in df.columns]
+            
+                styler = df.style
+            
+                def _apply(cols, color):
+                    if cols and color:
+                        styler.set_properties(subset=cols, **{"background-color": color})
+            
+                _apply(cols2, color2)
+                _apply(cols1, color1)
+                
+                return styler
+
+            styled = (
+                highlight_subset(
+                    res,
+                    highlight_cols1, "rgba(0, 139, 139, 0.35)",
+                    highlight_cols2, "rgba(175, 175, 175, 0.35)",
+                )
+                .set_properties(subset=num_cols,  **{"text-align": "center"})
+                .set_properties(subset=text_cols, **{"text-align": "left"})
+                .set_table_styles([
+                    {"selector": "th.col_heading", "props": [("text-align", "center")]},
+                    {"selector": "th.row_heading", "props": [("text-align", "center")]},
+                ], overwrite=False))
+                
             st.dataframe(
-                res, 
+                styled, 
                 use_container_width=True,
                 column_config={
-                    "Market Value (M€)": st.column_config.NumberColumn(
-                        "Market Value (€)",
-                        format="€ %.1f M",  # one decimal, in millions
-                    )
+                    "Score": st.column_config.NumberColumn("Score", format="%.2f"),
+                    "Goal Scoring": st.column_config.NumberColumn("Scoring", format="%.2f"),
+                    "Goal Efficacy": st.column_config.NumberColumn("Efficacy", format="%.2f"), 
+                    "Goal Creation": st.column_config.NumberColumn("Goal Creation", format="%.2f"),
+                    "Shooting": st.column_config.NumberColumn("Shooting", format="%.2f"),
+                    "Passing Influence": st.column_config.NumberColumn("Pass Inf.", format="%.2f"),
+                    "Passing Accuracy": st.column_config.NumberColumn("Pass Acc.", format="%.2f"),
+                    "Possesion Influence": st.column_config.NumberColumn("Possession", format="%.2f"),
+                    "Progression": st.column_config.NumberColumn("Progression", format="%.2f"),  
+                    "Dribling": st.column_config.NumberColumn("Dribling", format="%.2f"),
+                    "Aerial Influence": st.column_config.NumberColumn("Aerial", format="%.2f"),
+                    "Defensive Influence": st.column_config.NumberColumn("Defense", format="%.2f"),
+                    "Discipline and Consistency": st.column_config.NumberColumn("Discipline & Consistency", format="%.2f"),                    
+                    "Market Value (M€)": st.column_config.NumberColumn("Market Value (€)",format="€ %.1f M"),  # one decimal, in millions
+                    "Goals_90m": st.column_config.NumberColumn("Gls/90", help="Goals per 90 minutes", format="%.2f",width="small"),   
+                    "Goals not Penalty_90m": st.column_config.NumberColumn("Gls NP/90", help="Goals not Penalty per 90 minutes", format="%.2f"),
+                    "Goals Minus Expected_90m": st.column_config.NumberColumn("Gls-Exp/90m", help="Goals Minus Expected Goals per 90 minutes", format="%.2f"),
+                    "Goals/Shoot": st.column_config.NumberColumn("Gls/Shoot", help="Goals per Shoots", format="%.2f"),
+                    "Shoots on Target_90m": st.column_config.NumberColumn("SoT/90m", help="Shoots on Target per 90 minutes", format="%.2f"),                    
                 }
             )
 

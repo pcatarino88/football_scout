@@ -118,24 +118,36 @@ else:
 @st.cache_data
 def load_df(path) -> pd.DataFrame:
     return pd.read_parquet(path)
-
-POSITION_ORDER = ["Centre Back (CB)","Right Back (RB)","Left Back (LB)","Defensive Midfielder (DM)","Center Midfielder (CM)",
-                  "Attacking Midfielder (AM)","Rigth Winger (RW)","Left Winger (LW)","Center Forward (CF)"]
+ 
+POSITION_ORDER = ["CB","RB","LB","DM","CM","AM","RW","LW","CF"]
 
 LEAGUE_NAMES = {
-    "eng1": "England - Premier League",
-    "spa1": "Spain - La Liga",
-    "ger1": "Germany - Bundesliga",
-    "ita1": "Italy - Serie A",
-    "fra1": "France - Ligue 1",  
-    "net1": "Netherlands - Eredivisie",
-    "por1": "Portugal - Primeira Liga",
-    "bel1": "Belgium - Pro League",
-    "bra1": "Brazil - Série A",
-    "arg1": "Argentina - Liga Profesional",
-    "eng2": "England - Championship",
-    "ita2": "Italy - Serie B"
+    "GB 1": "England - Premier League",
+    "ES 1": "Spain - La Liga",
+    "DE 1": "Germany - Bundesliga",
+    "IT 1": "Italy - Serie A",
+    "FR 1": "France - Ligue 1",  
+    "NL 1": "Netherlands - Eredivisie",
+    "PT 1": "Portugal - Primeira Liga",
+    "BE 1": "Belgium - Pro League",
+    "BR 1": "Brazil - Série A",
+    "AR 1": "Argentina - Liga Profesional",
+    "GB 2": "England - Championship",
+    "IT 2": "Italy - Serie B"
 }
+
+POSITION_NAMES = {
+    "CB": "Centre Back (CB)",
+    "RB": "Right Back (RB)",
+    "LB": "Left Back (LB)",
+    "DM": "Defensive Midfielder (DM)",
+    "CM": "Center Midfielder (CM)",
+    "AM": "Attacking Midfielder (AM)",    
+    "RW": "Rigth Winger (RW)",
+    "LW": "Left Winger (LW)",
+    "CF": "Center Forward (CF)"
+}
+
 
 
 # ---------------------------
@@ -175,10 +187,21 @@ with tab1:
 
     # Position filter
     with c2:
-        present = set(df_tab1["Position"].dropna().unique().tolist())
-        pos_opts = ["All"] + [p for p in POSITION_ORDER if p in present]
-        position = st.selectbox("Position", pos_opts, index=0, help="Optional filter by position")
-        pos_filter = None if position == "All" else position
+        # Unique position codes from the DF
+        position_codes = [code for code in POSITION_NAMES if code in df_tab1["Position"].unique()]
+        # Build display options and reverse map (display -> code)
+        display_options = ["All"] + [POSITION_NAMES[code] for code in position_codes]
+        reverse_map = {POSITION_NAMES[code]: code for code in position_codes}
+        reverse_map["All"] = "All"
+        # UI select (default = All)
+        position_display_choice = st.selectbox(
+            "Position",
+            display_options,
+            index=0,
+            help="Optional filter by position."
+        )
+        # Convert back to codes for filtering
+        position = None if position_display_choice == "All" else [reverse_map[position_display_choice]]
     
     # Age Slider
     with c3:
@@ -258,7 +281,7 @@ with tab1:
         try:
             params = TopPlayersParams(
                 n=top_n,
-                pos=pos_filter,
+                pos=position,
                 min_age=min_age,
                 max_age=max_age,
                 max_MV=max_MV,
@@ -350,18 +373,24 @@ with tab2:
         # Apply squad filter (keep df_l if 'All' or league not selected)
         df_s = df_l if (league_code_tab2 is None or squad_choice == "All") else df_l[df_l["Squad"] == squad_choice]
 
-    with c3:
-        positions = (
-            sorted(
-                df_s["Position"].dropna().unique().tolist(),
-                key=lambda x: POSITION_ORDER.index(x) if x in POSITION_ORDER else len(POSITION_ORDER)
-            )
-            if squad_choice else []
-        )
+    with c3:             
+        positions = [
+            p for p in POSITION_ORDER
+            if p in df_s["Position"].dropna().unique().tolist()
+        ] if squad_choice else []
+    
+        # Add "All" option at the beginning
         position_options = ["All"] + positions
-
-        position = st.selectbox("Position", position_options, index=0, key="t2_pos",
-                                help="Optional filter by position.")
+    
+        # Selectbox with friendly labels from POSITION_NAMES
+        position = st.selectbox(
+            "Position",
+            position_options,
+            index=0,
+            key="t2_pos",
+            help="Optional filter by position.",
+            format_func=lambda x: POSITION_NAMES.get(x, x)  # fallback to code if not in dict
+        )
 
         df_p = df_s if position == "All" else df_s[df_s["Position"] == position]
 

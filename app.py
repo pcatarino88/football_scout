@@ -296,13 +296,12 @@ with tab1:
 
             res.index = res.index + 1       # shift index to start at 1
             res.index.name = "Rank"         # rename index
+
+            # -- TABLE FORMATING --
             
             # columns to highlight
             highlight_cols1 = ["Score"]
             highlight_cols2 = list(FEATURE_MAP.keys())
-
-            num_cols  = res.select_dtypes("number").columns.tolist() # numeric columns
-            text_cols = [c for c in res.columns if c not in num_cols] # not numeric columns
 
             def highlight_subset(df,cols1, color1,cols2=None, color2=None):
                 """
@@ -322,18 +321,14 @@ with tab1:
                 
                 return styler
 
-            styled = (
-                highlight_subset(
-                    res,
-                    highlight_cols1, "rgba(0, 139, 139, 0.35)",
-                    highlight_cols2, "rgba(175, 175, 175, 0.35)",
+            styled = highlight_subset(
+                res,
+                highlight_cols1, "rgba(0, 139, 139, 0.35)",
+                highlight_cols2, "rgba(175, 175, 175, 0.35)",
                 )
-                .set_properties(subset=num_cols,  **{"text-align": "center"})
-                .set_properties(subset=text_cols, **{"text-align": "left"})
-                .set_table_styles([
-                    {"selector": "th.col_heading", "props": [("text-align", "center")]},
-                    {"selector": "th.row_heading", "props": [("text-align", "center")]},
-                ], overwrite=False))
+
+            # Enable hide / expand extra columns per selected feature
+            
                 
             st.dataframe(
                 styled, 
@@ -357,7 +352,15 @@ with tab1:
                     "Goals not Penalty_90m": st.column_config.NumberColumn("Gls NP/90", help="Goals not Penalty per 90 minutes", format="%.2f"),
                     "Goals Minus Expected_90m": st.column_config.NumberColumn("Gls-Exp/90m", help="Goals Minus Expected Goals per 90 minutes", format="%.2f"),
                     "Goals/Shoot": st.column_config.NumberColumn("Gls/Shoot", help="Goals per Shoots", format="%.2f"),
-                    "Shoots on Target_90m": st.column_config.NumberColumn("SoT/90m", help="Shoots on Target per 90 minutes", format="%.2f"),                    
+                    "Penalty Efficacy": st.column_config.NumberColumn("Pen Eff%", help="Penalty Scored / Penalty Attempts", format="%.2f"),
+                    "Shoots_90m": st.column_config.NumberColumn("Sht/90m", help="Shoots per 90 minutes", format="%.2f"),                    
+                    "Shoots on Target_90m": st.column_config.NumberColumn("SoT/90m", help="Shoots on Target per 90 minutes", format="%.2f"),
+                    "FreeKick Tacker": st.column_config.NumberColumn("FK Tacker", help="FreeKick Tacker (1 if yes)", format="%.0f"),
+                    "Short Cmp_90m": st.column_config.NumberColumn("Sht Pass/90m", help="Short distance passes completed per 90 minutes", format="%.1f"),
+                    "Medium Cmp_90m": st.column_config.NumberColumn("Med Pass/90m", help="Medium distance passes completed per 90 minutes", format="%.1f"),
+                    "Long Cmp_90m": st.column_config.NumberColumn("Long Pass/90m", help="Long distance passes completed per 90 minutes", format="%.1f"),
+                    "Prog Passes_90m": st.column_config.NumberColumn("Prog Pass/90m", help="Progressive passes completed per 90 minutes", format="%.1f"),                           "Pass Prog Distance_90m": st.column_config.NumberColumn("Pass Dist/90m", help="Progressive passes distance per 90 minutes", format="%.1f"), 
+                    "Cmp Passes%": st.column_config.NumberColumn("Pass Acc%", help="Completed Passes / Attempted Passes", format="%.1f"),                    
                 }
             )
 

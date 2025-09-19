@@ -302,82 +302,82 @@ with tab1:
         except ValueError as e:
             st.error(str(e))
 
-# ---------- render results (persists across reruns) ----------
-res = st.session_state.get("tp_res")
-selected_features_for_view = st.session_state.get("tp_features", [])
-
-if res is not None:            
-    # -- TABLE FORMATING --
-    def highlight_subset(df, cols1, color1, cols2=None, color2=None):
-        cols1 = [c for c in (cols1 or []) if c in df.columns]
-        cols2 = [c for c in (cols2 or []) if c in df.columns]
-        styler = df.style
-        if cols2 and color2: styler = styler.set_properties(subset=cols2, **{"background-color": color2})
-        if cols1 and color1: styler = styler.set_properties(subset=cols1, **{"background-color": color1})
-        return styler
+    # ---------- render results (persists across reruns) ----------
+    res = st.session_state.get("tp_res")
+    selected_features_for_view = st.session_state.get("tp_features", [])
     
-    # decide columns
-    core_cols = [c for c in (STANDARD_COLS + ["Score"] + selected_features_for_view) if c in res.columns]
-    extras_raw = [c for f in selected_features_for_view for c in FEATURE_MAP.get(f, []) if c in res.columns]
-    seen = set(); extra_cols = [c for c in extras_raw if not (c in seen or seen.add(c))]
-
-    show_extras = st.toggle("Show extra stats (per-feature details)", value=False, key="show_extras")
-    cols_to_show = core_cols + (extra_cols if show_extras else [])
-    df_show = res.loc[:, cols_to_show].copy()
-
-    # style
-    score_props = {
-        "background-color": "rgba(0,95,95,0.65)",  # darker + more opaque
-        "color": "white",
-        "font-weight": "bold",
-        "text-align": "center",
-    }
-   
-    styled = (
-        highlight_subset(
-            df_show,
-            cols1=["Score"],                 color1="rgba(0,95,95,0.65)",
-            cols2=list(FEATURE_MAP.keys()), color2="rgba(175,175,175,0.25)",
+    if res is not None:            
+        # -- TABLE FORMATING --
+        def highlight_subset(df, cols1, color1, cols2=None, color2=None):
+            cols1 = [c for c in (cols1 or []) if c in df.columns]
+            cols2 = [c for c in (cols2 or []) if c in df.columns]
+            styler = df.style
+            if cols2 and color2: styler = styler.set_properties(subset=cols2, **{"background-color": color2})
+            if cols1 and color1: styler = styler.set_properties(subset=cols1, **{"background-color": color1})
+            return styler
+        
+        # decide columns
+        core_cols = [c for c in (STANDARD_COLS + ["Score"] + selected_features_for_view) if c in res.columns]
+        extras_raw = [c for f in selected_features_for_view for c in FEATURE_MAP.get(f, []) if c in res.columns]
+        seen = set(); extra_cols = [c for c in extras_raw if not (c in seen or seen.add(c))]
+    
+        show_extras = st.toggle("Show extra stats (per-feature details)", value=False, key="show_extras")
+        cols_to_show = core_cols + (extra_cols if show_extras else [])
+        df_show = res.loc[:, cols_to_show].copy()
+    
+        # style
+        score_props = {
+            "background-color": "rgba(0,95,95,0.65)",  # darker + more opaque
+            "color": "white",
+            "font-weight": "bold",
+            "text-align": "center",
+        }
+       
+        styled = (
+            highlight_subset(
+                df_show,
+                cols1=["Score"],                 color1="rgba(0,95,95,0.65)",
+                cols2=list(FEATURE_MAP.keys()), color2="rgba(175,175,175,0.25)",
+            )
+            .set_properties(subset=['Score'], **score_props)
         )
-        .set_properties(subset=['Score'], **score_props)
-    )
-
-    # column config (only for visible columns)
-    BASE_CFG = {
-        "Market Value (M€)": st.column_config.NumberColumn("Market Value", format="€ %.1f M"),
-        "Score": st.column_config.NumberColumn("Score", format="%.2f"),
-        "Goal Scoring": st.column_config.NumberColumn("Scoring", format="%.2f"),
-        "Goal Efficacy": st.column_config.NumberColumn("Efficacy", format="%.2f"),
-        "Goal Creation": st.column_config.NumberColumn("Goal Creation", format="%.2f"),
-        "Shooting": st.column_config.NumberColumn("Shooting", format="%.2f"),
-        "Passing Influence": st.column_config.NumberColumn("Pass Inf.", format="%.2f"),
-        "Passing Accuracy": st.column_config.NumberColumn("Pass Acc.", format="%.2f"),
-        "Possession Influence": st.column_config.NumberColumn("Possession", format="%.2f"),  # note spelling
-        "Progression": st.column_config.NumberColumn("Progression", format="%.2f"),
-        "Dribling": st.column_config.NumberColumn("Dribling", format="%.2f"),
-        "Aerial Influence": st.column_config.NumberColumn("Aerial", format="%.2f"),
-        "Defensive Influence": st.column_config.NumberColumn("Defense", format="%.2f"),
-        "Discipline and Consistency": st.column_config.NumberColumn("Discipline & Consistency", format="%.2f"),
-        "Goals_90m": st.column_config.NumberColumn("Gls/90", help="Goals per 90 minutes", format="%.2f", width="small"),
-        "Goals not Penalty_90m": st.column_config.NumberColumn("Gls NP/90", help="Goals not Penalty per 90 minutes", format="%.2f", width="small"),
-        "Goals Minus Expected_90m": st.column_config.NumberColumn("Gls-Exp/90m", help="Goals Minus Expected Goals per 90 minutes", format="%.2f", width="small"),
-        "Goals/Shoot": st.column_config.NumberColumn("Gls/Shoot", help="Goals per Shoots", format="%.2f", width="small"),
-        "Penalty Efficacy": st.column_config.NumberColumn("Pen Eff%", help="Penalty Scored / Penalty Attempts", format="%.2f", width="small"),
-        "Shoots_90m": st.column_config.NumberColumn("Sht/90m", help="Shoots per 90 minutes", format="%.2f", width="small"),
-        "Shoots on Target_90m": st.column_config.NumberColumn("SoT/90m", help="Shoots on Target per 90 minutes", format="%.2f", width="small"),
-        "FreeKick Tacker": st.column_config.NumberColumn("FK Tacker", help="FreeKick Tacker (1 if yes)", format="%.0f", width="small"),
-        "Short Cmp_90m": st.column_config.NumberColumn("Sht Pass/90m", help="Short distance passes completed per 90 minutes", format="%.1f", width="small"),
-        "Medium Cmp_90m": st.column_config.NumberColumn("Med Pass/90m", help="Medium distance passes completed per 90 minutes", format="%.1f", width="small"),
-        "Long Cmp_90m": st.column_config.NumberColumn("Long Pass/90m", help="Long distance passes completed per 90 minutes", format="%.1f", width="small"),
-        "Prog Passes_90m": st.column_config.NumberColumn("Prog Pass/90m", help="Progressive passes completed per 90 minutes", format="%.1f", width="small"),
-        "Pass Prog Distance_90m": st.column_config.NumberColumn("Pass Dist/90m", help="Progressive passes distance per 90 minutes", format="%.1f", width="small"),
-        "Cmp Passes%": st.column_config.NumberColumn("Pass Acc%", help="Completed Passes / Attempted Passes", format="%.1f", width="small"),
-    }
-    cfg = {k: v for k, v in BASE_CFG.items() if k in df_show.columns}
-
-    st.dataframe(styled, use_container_width=True, column_config=cfg)
-else:
-    st.info("Set filters and click Search.")
+    
+        # column config (only for visible columns)
+        BASE_CFG = {
+            "Market Value (M€)": st.column_config.NumberColumn("Market Value", format="€ %.1f M"),
+            "Score": st.column_config.NumberColumn("Score", format="%.2f"),
+            "Goal Scoring": st.column_config.NumberColumn("Scoring", format="%.2f"),
+            "Goal Efficacy": st.column_config.NumberColumn("Efficacy", format="%.2f"),
+            "Goal Creation": st.column_config.NumberColumn("Goal Creation", format="%.2f"),
+            "Shooting": st.column_config.NumberColumn("Shooting", format="%.2f"),
+            "Passing Influence": st.column_config.NumberColumn("Pass Inf.", format="%.2f"),
+            "Passing Accuracy": st.column_config.NumberColumn("Pass Acc.", format="%.2f"),
+            "Possession Influence": st.column_config.NumberColumn("Possession", format="%.2f"),  # note spelling
+            "Progression": st.column_config.NumberColumn("Progression", format="%.2f"),
+            "Dribling": st.column_config.NumberColumn("Dribling", format="%.2f"),
+            "Aerial Influence": st.column_config.NumberColumn("Aerial", format="%.2f"),
+            "Defensive Influence": st.column_config.NumberColumn("Defense", format="%.2f"),
+            "Discipline and Consistency": st.column_config.NumberColumn("Discipline & Consistency", format="%.2f"),
+            "Goals_90m": st.column_config.NumberColumn("Gls/90", help="Goals per 90 minutes", format="%.2f", width="small"),
+            "Goals not Penalty_90m": st.column_config.NumberColumn("Gls NP/90", help="Goals not Penalty per 90 minutes", format="%.2f", width="small"),
+            "Goals Minus Expected_90m": st.column_config.NumberColumn("Gls-Exp/90m", help="Goals Minus Expected Goals per 90 minutes", format="%.2f", width="small"),
+            "Goals/Shoot": st.column_config.NumberColumn("Gls/Shoot", help="Goals per Shoots", format="%.2f", width="small"),
+            "Penalty Efficacy": st.column_config.NumberColumn("Pen Eff%", help="Penalty Scored / Penalty Attempts", format="%.2f", width="small"),
+            "Shoots_90m": st.column_config.NumberColumn("Sht/90m", help="Shoots per 90 minutes", format="%.2f", width="small"),
+            "Shoots on Target_90m": st.column_config.NumberColumn("SoT/90m", help="Shoots on Target per 90 minutes", format="%.2f", width="small"),
+            "FreeKick Tacker": st.column_config.NumberColumn("FK Tacker", help="FreeKick Tacker (1 if yes)", format="%.0f", width="small"),
+            "Short Cmp_90m": st.column_config.NumberColumn("Sht Pass/90m", help="Short distance passes completed per 90 minutes", format="%.1f", width="small"),
+            "Medium Cmp_90m": st.column_config.NumberColumn("Med Pass/90m", help="Medium distance passes completed per 90 minutes", format="%.1f", width="small"),
+            "Long Cmp_90m": st.column_config.NumberColumn("Long Pass/90m", help="Long distance passes completed per 90 minutes", format="%.1f", width="small"),
+            "Prog Passes_90m": st.column_config.NumberColumn("Prog Pass/90m", help="Progressive passes completed per 90 minutes", format="%.1f", width="small"),
+            "Pass Prog Distance_90m": st.column_config.NumberColumn("Pass Dist/90m", help="Progressive passes distance per 90 minutes", format="%.1f", width="small"),
+            "Cmp Passes%": st.column_config.NumberColumn("Pass Acc%", help="Completed Passes / Attempted Passes", format="%.1f", width="small"),
+        }
+        cfg = {k: v for k, v in BASE_CFG.items() if k in df_show.columns}
+    
+        st.dataframe(styled, use_container_width=True, column_config=cfg)
+    else:
+        st.info("Set filters and click Search.")
 
 # ===========================
 # Tab 2: Compare (Radar)

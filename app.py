@@ -378,6 +378,13 @@ with tab1:
             "Assists_90m": st.column_config.NumberColumn("Ast/90m", help="Assists per 90 minutes", format="%.2f", width="small"),            
             "Key Passes_90m": st.column_config.NumberColumn("Key Pass/90m", help="Key Passes per 90 minutes", format="%.2f", width="small"),    
             "Goal Creating Actions_90m": st.column_config.NumberColumn("GCA/90m", help="Goal Creating Actions per 90 minutes", format="%.2f", width="small"),
+            "Touches_90m": st.column_config.NumberColumn("Touch/90m", help="Touches on the ball per 90 minutes", format="%.1f", width="small"),
+            "Fouls Suffered_90m": st.column_config.NumberColumn("Fls Suf/90m", help="Fouls suffered per 90 minutes", format="%.1f", width="small"),
+            "Carries_90m": st.column_config.NumberColumn("Carr/90m", help="Carries per 90 minutes", format="%.1f", width="small"),      
+            "Prog Carries_90m": st.column_config.NumberColumn("PCarr/90m", help="Progressive Carries per 90 minutes", format="%.1f", width="small"),    
+            "Carries PrgDist_90m": st.column_config.NumberColumn("PCarr Dis/90m", help="Progressive Carries Distance per 90 minutes", format="%.1f", width="small"),  
+            "Take-Ons Succ_90m": st.column_config.NumberColumn("Drb/90m", help="Successfull dribles per 90 minutes", format="%.1f", width="small"),
+            "Take-Ons Succ%": st.column_config.NumberColumn("Drb%", help="Successfull dribles / Attempted", format="%.1f", width="small"),             
         }
         cfg = {k: v for k, v in BASE_CFG.items() if k in df_show.columns}
     

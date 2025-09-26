@@ -548,6 +548,18 @@ with tab2:
     )
     
     # ---------- Draw  ----------
+    st.markdown("""
+    <style>
+    @media (max-width: 900px){
+    .responsive-chart{
+        width: 100%;
+        box-sizing: border-box;      /* include padding in width */
+        padding: 0 12px !important;  /* side space only on mobile */
+    }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     players = st.session_state.selected_players_tab2
     fill = st.checkbox("Fill areas", value=True)
     draw = st.button("Draw radar")
@@ -556,9 +568,9 @@ with tab2:
         if players:
             df_long = radar_data(df_tab2, players)
             fig = radar_plotly(df_long, fill=fill)
-            left, mid, right = st.columns([0.05, 0.9, 0.05])
-            with mid:
-                st.plotly_chart(fig, use_container_width=True)
+            st.markdown('<div class="responsive-chart">', unsafe_allow_html=True)
+            st.plotly_chart(fig, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.info("Select at least one player.")
 

@@ -548,6 +548,22 @@ with tab2:
     )
     
     # ---------- Draw  ----------
+    
+    FEATURE_LABELS = {
+    "Goal Scoring": "Scoring",
+    "Goal Efficacy": "Efficacy",
+    "Shooting": "Shoot",
+    "Passing Influence": "Pass Influence",
+    "Passing Accuracy": "Pass Accuracy",
+    "Goal Creation": "Creation",
+    "Possession Influence": "Possession",
+    "Progression": "Progression",
+    "Dribbling": "Dribbling",
+    "Aerial Influence": "Aerial",
+    "Defensive Influence": "Defense",
+    "Discipline and Consistency": "Consistency"
+    }
+
     players = st.session_state.selected_players_tab2
     fill = st.checkbox("Fill areas", value=True)
     draw = st.button("Draw radar")
@@ -555,10 +571,10 @@ with tab2:
     if draw:
         if players:
             df_long = radar_data(df_tab2, players)
-            fig = radar_plotly(df_long, fill=fill)
+            fig = radar_plotly(df_long, fill=fill, label_map=FEATURE_LABELS)
             fig.update_layout(
                 autosize=False,
-                margin=dict(l=50, r=50, t=24, b=24)
+                margin=dict(l=55, r=55, t=24, b=24)
             )
             st.plotly_chart(fig, use_container_width=False, config={"responsive": True})
         else:

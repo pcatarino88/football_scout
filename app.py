@@ -551,10 +551,9 @@ with tab2:
     st.markdown("""
     <style>
     @media (max-width: 900px){
-    .responsive-chart{
-        width: 100%;
-        box-sizing: border-box;      /* include padding in width */
-        padding: 0 12px !important;  /* side space only on mobile */
+    .block-container {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
     }
     }
     </style>
@@ -568,9 +567,7 @@ with tab2:
         if players:
             df_long = radar_data(df_tab2, players)
             fig = radar_plotly(df_long, fill=fill)
-            st.markdown('<div class="responsive-chart">', unsafe_allow_html=True)
             st.plotly_chart(fig, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.info("Select at least one player.")
 

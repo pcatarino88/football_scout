@@ -558,7 +558,7 @@ with tab2:
             fig = radar_plotly(df_long, fill=fill)
             fig.update_layout(
                 autosize=False,
-                margin=dict(l=200, r=200, t=24, b=24)
+                margin=dict(l=24, r=24, t=24, b=24)
             )
             st.plotly_chart(fig, use_container_width=False, config={"responsive": True})
         else:

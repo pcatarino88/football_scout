@@ -50,7 +50,7 @@ else:
             margin: 12px 0 18px 0;
             border-radius: 12px;
             overflow: hidden;
-            height: 150px;                 /* reduce banner height */
+            height: 140px;                 /* reduce banner height */
             background-image: url("data:image/png;base64,{b64}");
             background-size: cover;          /* fill */
             background-position: center;     /* center crop */
@@ -62,14 +62,15 @@ else:
             background: rgba(0,0,0,0.28);   /* transparency */
         }}
         .banner-text {{
-            position: absolute; left: 20px; top: 40%;            
+            position: absolute; left: 20px; top: 48%;            
             transform: translateY(-50%);
             color: #fff; text-align: left;
             padding: 0;
         }}
         .banner-text h1 {{
-            margin: 0 0 6px 0;
+            margin: 0 0 1px 0;
             font-size: 44px;
+            line-height: 1.1;    
         }}    
         .banner-text p {{
             margin: 0; font-size: 18px; opacity: .95;
@@ -362,6 +363,8 @@ with tab1:
     
         # column config (only for visible columns)
         BASE_CFG = {
+            "Rank": st.column_config.NumberColumn("Rank", pinned="left"),
+            "Player": st.column_config.TextColumn("Player", pinned="left"),
             "Market Value (M€)": st.column_config.NumberColumn("Market Value", format="€ %.1f M"),
             "Score": st.column_config.NumberColumn("Score", format="%.2f"),
             "Goal Scoring": st.column_config.NumberColumn("Scoring", format="%.2f"),
@@ -423,6 +426,10 @@ with tab1:
     else:
         st.info("Set filters and click Search.")
 
+    # ------------------------------------------------
+    # Tab1 footer note shown when table is displayed
+    # ------------------------------------------------        
+
     if run:
        # Tab 1 Footer
         st.write("")
@@ -470,6 +477,10 @@ with tab2:
     # --- keep accumulated selections in session ---
     if "selected_players_tab2" not in st.session_state:
         st.session_state.selected_players_tab2 = []
+    if "t2_selected_players_box" not in st.session_state:   
+        st.session_state.t2_selected_players_box = st.session_state.selected_players_tab2
+    if "t2_chain_players" not in st.session_state:
+        st.session_state.t2_chain_players = []        
 
     def dedupe_keep_order(seq):
         seen, out = set(), []
@@ -478,11 +489,14 @@ with tab2:
                 seen.add(x); out.append(x)
         return out
 
-    def add_players(picks):
-        if picks:
-            st.session_state.selected_players_tab2 = dedupe_keep_order(
-                st.session_state.selected_players_tab2 + list(picks)
-            )
+    # Consume picks from the filter Before rendering the top box
+    if st.session_state.t2_chain_players:
+        merged = dedupe_keep_order(
+            st.session_state.t2_selected_players_box + st.session_state.t2_chain_players
+        )
+        st.session_state.t2_selected_players_box = merged
+        st.session_state.selected_players_tab2 = merged
+        st.session_state.t2_chain_players = []  # clear after consuming
 
     # ------------------------------------------------
     # 1) Top Filter: Global player search (ALL players available)
@@ -492,7 +506,6 @@ with tab2:
     st.multiselect(
         "Type to search and manage your list",
         options=ALL_PLAYER_NAMES,                 # <- global pool, not filtered
-        default=st.session_state.selected_players_tab2,
         key="t2_selected_players_box",
         placeholder="Start typing a name...",
         help="Search any player directly. Filters below are optional helpers."
@@ -501,7 +514,6 @@ with tab2:
     st.session_state.selected_players_tab2 = st.session_state.t2_selected_players_box
 
     st.divider()
-
 
     # ------------------------------------------------
     # 2) Below Filter: Optional cascade filters (League -> Squad -> Position -> Player)
@@ -566,7 +578,6 @@ with tab2:
             disabled=(squad_choice == "All" and league_code_tab2 is None),
             placeholder="Select one or more…"
         )
-        add_players(picked_chain)  # <- push selection into the top search list
 
     # ------------------------------------------------
     # Draw radar graph 
@@ -625,7 +636,8 @@ with tab2:
             """,
             unsafe_allow_html=True
         )    
-       
+    else:
+        st.info("Select players to compare and click Draw Radar.")
 
 # ================================================
 # APP FOOTER

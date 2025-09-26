@@ -146,7 +146,20 @@ POSITION_NAMES = {
     "CF": "Center Forward (CF)"
 }
 
-
+FEATURE_LABELS = {
+"Goal Scoring": "Scoring",
+"Goal Efficacy": "Efficacy",
+"Shooting": "Shoot",
+"Passing Influence": "Pass Influence",
+"Passing Accuracy": "Pass Accuracy",
+"Goal Creation": "Creation",
+"Possession Influence": "Possession",
+"Progression": "Progression",
+"Dribbling": "Dribbling",
+"Aerial Influence": "Aerial",
+"Defensive Influence": "Defense",
+"Discipline and Consistency": "Consistency"
+}
 
 # ---------------------------
 # Tabs
@@ -162,7 +175,9 @@ with tab1:
 
     df_tab1 = load_df("assets/df_tab1.parquet")
 
-    # ---------- Filters in 5 columns ----------
+    # ------------------------------------------------
+    # Top filters: League, Position, Age, Market Value, Top N
+    # ------------------------------------------------
     c1, c2, c3, c4, c5 = st.columns(5)
 
     # League filter
@@ -230,7 +245,10 @@ with tab1:
     with c5:
         top_n = st.number_input("Number of Players", min_value=5, max_value=25, value=10, step=5, help="Select number of top players you want to list.")
 
-    # ---------- Skills selector (full width below other filters) ----------
+    # ------------------------------------------------
+    # Skill Selector: Select up to 5 skills
+    # ------------------------------------------------
+
     MAX_SKILLS = 5
     skills = list(FEATURE_MAP.keys())
     
@@ -269,7 +287,10 @@ with tab1:
     # final list for downstream use
     selected_features = [s for s, k in toggle_keys.items() if st.session_state.get(k, False)]
 
-    # ---------- Run ----------
+    # ------------------------------------------------
+    # Display results table
+    # ------------------------------------------------
+
     run = st.button("Search")
 
     if run:
@@ -299,7 +320,7 @@ with tab1:
         except ValueError as e:
             st.error(str(e))
 
-    # ---------- render results (persists across reruns) ----------
+
     res = st.session_state.get("tp_res")
     selected_features_for_view = st.session_state.get("tp_features", [])
     
@@ -462,18 +483,41 @@ with tab2:
             st.session_state.selected_players_tab2 = dedupe_keep_order(
                 st.session_state.selected_players_tab2 + list(picks)
             )
+
+    # ------------------------------------------------
+    # 1) Top Filter: Global player search (ALL players available)
+    # ------------------------------------------------
+    ALL_PLAYER_NAMES = sorted(df_tab2["Player"].dropna().unique().tolist())
+
+    st.multiselect(
+        "Type to search and manage your list",
+        options=ALL_PLAYER_NAMES,                 # <- global pool, not filtered
+        default=st.session_state.selected_players_tab2,
+        key="t2_selected_players_box",
+        placeholder="Start typing a name...",
+        help="Search any player directly. Filters below are optional helpers."
+    )
+    # keep session state in sync with the top box
+    st.session_state.selected_players_tab2 = st.session_state.t2_selected_players_box
+
+    st.divider()
+
+
+    # ------------------------------------------------
+    # 2) Below Filter: Optional cascade filters (League -> Squad -> Position -> Player)
+    # ------------------------------------------------
+    st.markdown(
+        "<p style='font-size:14px;'>Find a player using filters:</p>",
+        unsafe_allow_html=True
+    )
     
-    # ---------- Top row: League | Squad | Position | Player ----------
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        # Unique league codes from df_tab2
         league_codes_tab2 = [code for code in LEAGUE_NAMES if code in df_tab2["League"].unique()]
-        # Build display options (simpler league names)
         display_options_tab2 = ["All"] + [LEAGUE_NAMES[code] for code in league_codes_tab2]
-        reverse_map_tab2 = {LEAGUE_NAMES[code]: code for code in league_codes_tab2}
-        reverse_map_tab2["All"] = "All"
-        # UI select (default = All)
+        reverse_map_tab2 = {"All": "All"} | {LEAGUE_NAMES[code]: code for code in league_codes_tab2}
+
         league_display_choice_tab2 = st.selectbox(
             "League",
             display_options_tab2,
@@ -481,9 +525,8 @@ with tab2:
             key="t2_league",
             help="Optional filter by league."
         )
-        # Convert back to codes for filtering
+
         league_code_tab2 = None if league_display_choice_tab2 == "All" else reverse_map_tab2[league_display_choice_tab2]
-        # Apply filter
         df_l = df_tab2 if league_code_tab2 is None else df_tab2[df_tab2["League"] == league_code_tab2]
 
     with c2:
@@ -494,78 +537,46 @@ with tab2:
             squad_options,
             index=0,
             key="t2_squad",
-            disabled=(league_code_tab2 is None),  # disabled when League = All
+            disabled=(league_code_tab2 is None),
             help="Optional filter by squad."
         )
-        # Apply squad filter (keep df_l if 'All' or league not selected)
         df_s = df_l if (league_code_tab2 is None or squad_choice == "All") else df_l[df_l["Squad"] == squad_choice]
 
-    with c3:             
-        positions = [
-            p for p in POSITION_ORDER
-            if p in df_s["Position"].dropna().unique().tolist()
-        ] if squad_choice else []
-    
-        # Add "All" option at the beginning
+    with c3:
+        positions = [p for p in POSITION_ORDER if p in df_s["Position"].dropna().unique().tolist()] if squad_choice else []
         position_options = ["All"] + positions
-    
-        # Selectbox with friendly labels from POSITION_NAMES
         position = st.selectbox(
             "Position",
             position_options,
             index=0,
             key="t2_pos",
             help="Optional filter by position.",
-            format_func=lambda x: POSITION_NAMES.get(x, x)  # fallback to code if not in dict
+            format_func=lambda x: POSITION_NAMES.get(x, x)  # friendly labels
         )
-
         df_p = df_s if position == "All" else df_s[df_s["Position"] == position]
 
     with c4:
-        # Player picker in the cascade path (enabled once Squad chosen)
-        player_opts = sorted(df_p["Player"].dropna().unique().tolist()) if squad_choice else []
-        picked_chain = st.multiselect("Player", player_opts, default=[],
-                                      key="t2_chain_players", disabled=(squad_choice == ""),
-                                      placeholder="Select one or more…")
-        add_players(picked_chain)
+        # Player picker inside the cascade — selecting here ADDS to the top list
+        player_opts = sorted(df_p["Player"].dropna().unique().tolist()) if (squad_choice or league_code_tab2) else []
+        picked_chain = st.multiselect(
+            "Player",
+            player_opts,
+            default=[],
+            key="t2_chain_players",
+            disabled=(squad_choice == "All" and league_code_tab2 is None),
+            placeholder="Select one or more…"
+        )
+        add_players(picked_chain)  # <- push selection into the top search list
 
-    # ---------- Players to compare ----------
-    search_pool = df_p if position != "" else (df_s if squad != "" else (df_l if league != "" else df_tab2))
-    pool_names = sorted(search_pool["Player"].dropna().unique().tolist())
-    current = st.session_state.selected_players_tab2
-
-    # union = current selections + filtered pool (to keep selections visible)
-    options_for_box = dedupe_keep_order(current + pool_names)
+    # ------------------------------------------------
+    # Draw radar graph 
+    # ------------------------------------------------
     
-    st.markdown("**Players to compare**")
-    st.session_state.selected_players_tab2 = st.multiselect(
-        "Type to search and manage your list",
-        options=options_for_box,
-        default=current,
-        key="t2_selected_players_box",
-        placeholder="Start typing a name…",
-        help="Suggestions respect the filters above. Unselect to remove."
-    )
-    
-    # ---------- Draw  ----------
-    
-    FEATURE_LABELS = {
-    "Goal Scoring": "Scoring",
-    "Goal Efficacy": "Efficacy",
-    "Shooting": "Shoot",
-    "Passing Influence": "Pass Influence",
-    "Passing Accuracy": "Pass Accuracy",
-    "Goal Creation": "Creation",
-    "Possession Influence": "Possession",
-    "Progression": "Progression",
-    "Dribbling": "Dribbling",
-    "Aerial Influence": "Aerial",
-    "Defensive Influence": "Defense",
-    "Discipline and Consistency": "Consistency"
-    }
-
     players = st.session_state.selected_players_tab2
+    
     fill = st.checkbox("Fill areas", value=True)
+    
+    st.write("")
     draw = st.button("Draw radar")
 
     if draw:
@@ -580,7 +591,45 @@ with tab2:
         else:
             st.info("Select at least one player.")
 
-# APPLICATION FOOTER
+
+        # Tab 2 Footer
+        st.write("")
+        st.markdown(
+            """
+        <div style="text-align:left; color: gray; font-size: 10px; margin-left:10px; margin-top:5px;">
+            Skills were weighted according to related statistics as detailed below.  All metrics were scaled before weighting. <br>
+            1. <b>Goal Scoring</b>: Goals scored per 90m (60%), Goals scored excluding penalties per 90m (40%).
+            2. <b>Goal Efficacy</b>: Goals scored minus expected goals scored per 90m (40%), 
+            Goals divided by total shoots (40%), Penalties scored versus penalties attempted (20%).
+            3. <b>Shooting</b>: Total shoots per 90m (30%), Shoots on Target per 90m (40%), 
+            Goals versus total shoots (20%), FreeKick Tacker - yes or no (10%)
+            4. <b>Passing Influence</b>: Short passes completed per 90min (17.5%), 
+            Medium passes completed per 90m (17.5%), Long passes completed per 90m (17.5%), 
+            Progressive passes completed per 90m (35%), Progressive passes distance per 90m (12.5%).
+            5. <b>Passing Accuracy</b>: Total passes accuracy (55%), short passes accuracy (15%), 
+            medium passes accuracy (15%), long passes accuracy (15%).
+            6. <b>Goal Creation</b>: Assists per 90m (40%), Key Passes per 90m (30%), 
+            Goal Creating Actions per 90m (20%), Penalty won per 90m (10%).
+            7. <b>Possession Influence</b>: Ball touches per 90m (40%), Carries per 90m (40%), 
+            Fouls Suffered per 90m (20%).
+            8. <b>Progression</b>: Progressive Carries per 90m (60%), Carries progressive distance per 90m (40%).
+            9. <b>Dribling</b>: Successfull dribles per 90m (50%), Percentage of successfull dribles (50%).
+            10. <b>Aerial Influence</b>: Total aerial duels per 90m (40%), Percentage of aerial duels won (60%).
+            11. <b>Defensive Influence</b>: Tackles won per 90m (17.5%), Blocks per 90m (17.5%), 
+            Interceptions per 90m (17.5%), Clearances per 90m, Ball (17.5%) Recoveries per 90m (17.5%).
+            12. <b>Discipline and Consistency</b>: Own Goals per 90m (17.5%), Errors commited per 90m (17.5%), 
+            Yellow cards per 90m (15%), Red cards per 90m (17.5%), Fouls commited per 90m (15%), 
+            Penalties commited per 90m (17.5%).
+            </a><br>
+        </div>
+            """,
+            unsafe_allow_html=True
+        )    
+       
+
+# ================================================
+# APP FOOTER
+# ================================================
 
 # Add spacer
 st.markdown("<br>", unsafe_allow_html=True)
@@ -591,7 +640,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Footer
+# Footer note
 st.markdown(
     """
 <div style="text-align:left; color: gray; font-size: 12px; margin-left:10px; margin-top:0px;">

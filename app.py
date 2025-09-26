@@ -551,10 +551,12 @@ with tab2:
     st.markdown("""
     <style>
     @media (max-width: 900px){
-    .block-container {
-        padding-left: 12px !important;
-        padding-right: 12px !important;
-    }
+    /* Old & new Streamlit selectors */
+    .main .block-container{ padding-left:12px !important; padding-right:12px !important; }
+    [data-testid="stAppViewContainer"] .main .block-container{ padding-left:12px !important; padding-right:12px !important; }
+
+    /* Plotly wrapper tweaks so the iframe doesn't add its own outer gaps */
+    .stPlotlyChart, .stPlotlyChart > div { margin-left:0 !important; margin-right:0 !important; }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -567,6 +569,10 @@ with tab2:
         if players:
             df_long = radar_data(df_tab2, players)
             fig = radar_plotly(df_long, fill=fill)
+            fig.update_layout(
+                margin=dict(l=24, r=24, t=24, b=24),   # tweak values to taste
+                autosize=True
+            )
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Select at least one player.")

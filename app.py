@@ -557,10 +557,10 @@ with tab2:
             df_long = radar_data(df_tab2, players)
             fig = radar_plotly(df_long, fill=fill)
             fig.update_layout(
-                margin=dict(l=50, r=550, t=24, b=24),   # tweak values to taste
-                autosize=True
+                autosize=False,
+                margin=dict(l=200, r=200, t=24, b=24)
             )
-            st.plotly_chart(fig, use_container_width=False)
+            st.plotly_chart(fig, use_container_width=False, config={"responsive": True})
         else:
             st.info("Select at least one player.")
 

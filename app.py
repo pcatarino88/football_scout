@@ -548,19 +548,6 @@ with tab2:
     )
     
     # ---------- Draw  ----------
-    st.markdown("""
-    <style>
-    @media (max-width: 900px){
-    /* Old & new Streamlit selectors */
-    .main .block-container{ padding-left:12px !important; padding-right:12px !important; }
-    [data-testid="stAppViewContainer"] .main .block-container{ padding-left:12px !important; padding-right:12px !important; }
-
-    /* Plotly wrapper tweaks so the iframe doesn't add its own outer gaps */
-    .stPlotlyChart, .stPlotlyChart > div { margin-left:0 !important; margin-right:0 !important; }
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
     players = st.session_state.selected_players_tab2
     fill = st.checkbox("Fill areas", value=True)
     draw = st.button("Draw radar")
@@ -570,10 +557,10 @@ with tab2:
             df_long = radar_data(df_tab2, players)
             fig = radar_plotly(df_long, fill=fill)
             fig.update_layout(
-                margin=dict(l=24, r=24, t=24, b=24),   # tweak values to taste
+                margin=dict(l=50, r=550, t=24, b=24),   # tweak values to taste
                 autosize=True
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=False)
         else:
             st.info("Select at least one player.")
 

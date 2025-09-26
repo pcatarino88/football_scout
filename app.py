@@ -363,7 +363,7 @@ with tab1:
     
         # column config (only for visible columns)
         BASE_CFG = {
-            "Rank": st.column_config.NumberColumn("Rank", width="small"),
+            "Rank": st.column_config.NumberColumn("", width="small"),
             "Player": st.column_config.TextColumn("Player", pinned="left"),
             "Market Value (M€)": st.column_config.NumberColumn("Market Value", format="€ %.1f M"),
             "Score": st.column_config.NumberColumn("Score", format="%.2f"),

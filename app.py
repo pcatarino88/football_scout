@@ -4,7 +4,6 @@ import numpy as np
 import io
 from pathlib import Path
 import base64
-
 import plotly.io as pio
 from scout_core import radar_data, radar_plotly
 from scout_core import top_players, TopPlayersParams, FEATURE_MAP, STANDARD_COLS
@@ -35,7 +34,7 @@ st.markdown(
 
 # --- Banner ---
 # --- Paths ---
-BANNER_PATH = BASE_DIR / "assets" / "cover.png"
+BANNER_PATH = BASE_DIR / "assets" / "cover2.png"
 
 if not BANNER_PATH.exists():
     st.warning(f"Banner not found at {BANNER_PATH}")
@@ -52,12 +51,11 @@ else:
             border-radius: 12px;
             overflow: hidden;
             height: 150px;                 /* reduce banner height */
-        }}
-        .banner-img {{
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
+            background-image: url("data:image/png;base64,{b64}");
+            background-size: cover;          /* fill */
+            background-position: center;     /* center crop */
+            background-repeat: no-repeat;
+      }}
         }}
         .banner-overlay {{
             position: absolute; inset: 0;            
@@ -99,7 +97,6 @@ else:
         </style>
     
         <div class="banner-wrap">
-            <img class="banner-img" src="data:image/png;base64,{b64}" alt="banner"/>
             <div class="banner-overlay"></div>
             <div class="banner-text">
                 <h1>Football Scout</h1>
@@ -357,7 +354,7 @@ with tab1:
             "Dribling": st.column_config.NumberColumn("Dribling", format="%.2f"),
             "Aerial Influence": st.column_config.NumberColumn("Aerial", format="%.2f"),
             "Defensive Influence": st.column_config.NumberColumn("Defense", format="%.2f"),
-            "Discipline and Consistency": st.column_config.NumberColumn("Discipline & Consistency", format="%.2f"),
+            "Discipline and Consistency": st.column_config.NumberColumn("Disc. & Consist.", format="%.2f"),
             "Goals_90m": st.column_config.NumberColumn("Gls/90", help="Goals per 90 minutes", format="%.2f", width="small"),
             "Goals not Penalty_90m": st.column_config.NumberColumn("Gls NP/90", help="Goals not Penalty per 90 minutes", format="%.2f", width="small"),
             "Goals Minus Expected_90m": st.column_config.NumberColumn("Gls-Exp/90m", help="Goals Minus Expected Goals per 90 minutes", format="%.2f", width="small"),
@@ -384,13 +381,60 @@ with tab1:
             "Prog Carries_90m": st.column_config.NumberColumn("PCarr/90m", help="Progressive Carries per 90 minutes", format="%.1f", width="small"),    
             "Carries PrgDist_90m": st.column_config.NumberColumn("PCarr Dis/90m", help="Progressive Carries Distance per 90 minutes", format="%.1f", width="small"),  
             "Take-Ons Succ_90m": st.column_config.NumberColumn("Drb/90m", help="Successfull dribles per 90 minutes", format="%.1f", width="small"),
-            "Take-Ons Succ%": st.column_config.NumberColumn("Drb%", help="Successfull dribles / Attempted", format="%.1f", width="small"),             
+            "Take-Ons Succ%": st.column_config.NumberColumn("Drb%", help="Successfull dribles / Attempted", format="%.1f", width="small"),
+            "Aerial Duels_90m": st.column_config.NumberColumn("Aerial/90m", help="Aerials duels per 90 minutes", format="%.1f", width="small"),
+            "Aerial Duels Won%": st.column_config.NumberColumn("Aerial %", help="Aerials Duels Won / Aerial Duels Total", format="%.1f", width="small"),
+            "Tackles Won_90m": st.column_config.NumberColumn("Tkl/90m", help="Tackles won per 90 minutes", format="%.1f", width="small"),
+            "Blocks_90m": st.column_config.NumberColumn("Blk/90m", help="Blocks per 90 minutes", format="%.1f", width="small"),
+            "Interceptions_90m": st.column_config.NumberColumn("Int/90m", help="Interceptions per 90 minutes", format="%.1f", width="small"),
+            "Clearances_90m": st.column_config.NumberColumn("Clr/90m", help="Clearances per 90 minutes", format="%.1f", width="small"),
+            "Ball Recoveries_90m": st.column_config.NumberColumn("Rec/90m", help="Ball Recoveries per 90 minutes", format="%.1f", width="small"),
+            "Own Goals_90m": st.column_config.NumberColumn("OG/90m", help="Own Goals per 90 minutes", format="%.2f", width="small"),
+            "Errors_90m": st.column_config.NumberColumn("Err/90m", help="Errors leading to a shot or goal per 90 minutes", format="%.2f", width="small"),
+            "Yellow Cards_90m": st.column_config.NumberColumn("YC/90m", help="Yellow Cards per 90 minutes", format="%.2f", width="small"),
+            "Red Cards_90m": st.column_config.NumberColumn("RC/90m", help="Red Cards per 90 minutes", format="%.2f", width="small"),
+            "Fouls Commited_90m": st.column_config.NumberColumn("FlsCom/90m", help="Fouls committed per 90 minutes", format="%.1f", width="small"),
+            "Penalty Commited_90m": st.column_config.NumberColumn("PKCom/90m", help="Penalty committed per 90 minutes", format="%.2f", width="small")
         }
         cfg = {k: v for k, v in BASE_CFG.items() if k in df_show.columns}
     
         st.dataframe(styled, use_container_width=True, column_config=cfg)
     else:
         st.info("Set filters and click Search.")
+
+    # Tab 1 Footer
+    st.write("")
+    st.markdown(
+        """
+    <div style="text-align:left; color: gray; font-size: 10px; margin-left:10px; margin-top:5px;">
+        Skills were weighted according to related statistics as detailed below.  All metrics were scaled before weighting. <br>
+        1. <b>Goal Scoring</b>: Goals scored per 90m (60%), Goals scored excluding penalties per 90m (40%).
+        2. <b>Goal Efficacy</b>: Goals scored minus expected goals scored per 90m (40%), 
+        Goals divided by total shoots (40%), Penalties scored versus penalties attempted (20%).
+        3. <b>Shooting</b>: Total shoots per 90m (30%), Shoots on Target per 90m (40%), 
+        Goals versus total shoots (20%), FreeKick Tacker - yes or no (10%)
+        4. <b>Passing Influence</b>: Short passes completed per 90min (17.5%), 
+        Medium passes completed per 90m (17.5%), Long passes completed per 90m (17.5%), 
+        Progressive passes completed per 90m (35%), Progressive passes distance per 90m (12.5%).
+        5. <b>Passing Accuracy</b>: Total passes accuracy (55%), short passes accuracy (15%), 
+        medium passes accuracy (15%), long passes accuracy (15%).
+        6. <b>Goal Creation</b>: Assists per 90m (40%), Key Passes per 90m (30%), 
+        Goal Creating Actions per 90m (20%), Penalty won per 90m (10%).
+        7. <b>Possession Influence</b>: Ball touches per 90m (40%), Carries per 90m (40%), 
+        Fouls Suffered per 90m (20%).
+        8. <b>Progression</b>: Progressive Carries per 90m (60%), Carries progressive distance per 90m (40%).
+        9. <b>Dribling</b>: Successfull dribles per 90m (50%), Percentage of successfull dribles (50%).
+        10. <b>Aerial Influence</b>: Total aerial duels per 90m (40%), Percentage of aerial duels won (60%).
+        11. <b>Defensive Influence</b>: Tackles won per 90m (17.5%), Blocks per 90m (17.5%), 
+        Interceptions per 90m (17.5%), Clearances per 90m, Ball (17.5%) Recoveries per 90m (17.5%).
+        12. <b>Discipline and Consistency</b>: Own Goals per 90m (17.5%), Errors commited per 90m (17.5%), 
+        Yellow cards per 90m (15%), Red cards per 90m (17.5%), Fouls commited per 90m (15%), 
+        Penalties commited per 90m (17.5%).
+        </a><br>
+    </div>
+        """,
+        unsafe_allow_html=True
+    )    
 
 # ===========================
 # Tab 2: Compare (Radar)
@@ -518,13 +562,13 @@ with tab2:
 # APPLICATION FOOTER
 
 # Add spacer
-st.markdown("<br><br>", unsafe_allow_html=True)
+st.markdown("<br>", unsafe_allow_html=True)
 st.markdown("---")
 
 # Footer
 st.markdown(
     """
-<div style="text-align:left; color: gray; font-size: 12px; margin-left:10px; margin-top:5px;">
+<div style="text-align:left; color: gray; font-size: 12px; margin-left:10px; margin-top:0px;">
     Developed by 
     <a href="https://www.linkedin.com/in/pedrofcatarino/" target="_blank"
        style="color:#0a66c2; text-decoration:underline;">

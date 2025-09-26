@@ -573,7 +573,6 @@ with tab2:
         picked_chain = st.multiselect(
             "Player",
             player_opts,
-            default=[],
             key="t2_chain_players",
             disabled=(squad_choice == "All" and league_code_tab2 is None),
             placeholder="Select one or more…"

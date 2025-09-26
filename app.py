@@ -62,7 +62,7 @@ else:
             background: rgba(0,0,0,0.28);   /* transparency */
         }}
         .banner-text {{
-            position: absolute; left: 20px; top: 48%;            
+            position: absolute; left: 15px; top: 48%;            
             transform: translateY(-50%);
             color: #fff; text-align: left;
             padding: 0;
@@ -363,7 +363,7 @@ with tab1:
     
         # column config (only for visible columns)
         BASE_CFG = {
-            "Rank": st.column_config.NumberColumn("Rank", pinned="left"),
+            "Rank": st.column_config.NumberColumn("Rank", width="small"),
             "Player": st.column_config.TextColumn("Player", pinned="left"),
             "Market Value (M€)": st.column_config.NumberColumn("Market Value", format="€ %.1f M"),
             "Score": st.column_config.NumberColumn("Score", format="%.2f"),

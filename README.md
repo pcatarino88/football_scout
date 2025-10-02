@@ -12,16 +12,10 @@ The project is built in **Python** and deployed with **Streamlit Cloud**.
 ## 🚀 Features
 
 - **Top Players Ranking**  
-  Rank players by custom metrics (e.g. passing, shooting, defensive actions) and filter by age, position, or league.
+  Rank players by custom metrics (e.g. passing, shooting, defensive actions) and filter by age, position, market value or league.
 
 - **Radar Comparison**  
   Compare players head-to-head with customizable radar charts.
-
-- **Market Value Integration**  
-  Automatically retrieves player market values from Transfermarkt.
-
-- **League Filters**  
-  Select one or multiple leagues to explore specific markets.
 
 - **Interactive Web UI**  
   Built with Streamlit for fast deployment and easy use.
@@ -38,21 +32,19 @@ football_scout/
 
 │   ├── __init__.py
 
-│   ├── data.py               # Dataset already scraped, cleaned and processed
+│   ├── compare_players.py              # Radar chart generation
 
-│   ├── market_value.py       # Market value scraper (may fail in public envs)
+│   └── top_players.py            # Ranking players by metrics
 
-│   ├── radar.py              # Radar chart generation
+├── notebooks/               # Core logic
 
-│   └── ranking.py            # Ranking players by metrics
+│   ├── 1. Data Collection.ipynb       # Data scraping
 
-├── 1. Data Collection.ipynb       # Data scraping
+│   ├── 2. Data Processing.ipynb       # Data cleaning and EDA
 
-├── 2. Data Cleaning and EDA.ipynb # Cleaning & exploratory analysis
+│   ├── 3. TransferMarket Data.ipynb   # Adding market values frmo TransferMarket
 
-├── 3. Scout.ipynb                  # Defining scouting rules
-
-├── 4. Web App.ipynb                # Testing scout and developing the Streamlit app
+│   └── 4. Scout Functions.ipynb       # Developing and testing scouting functions
 
 ├── app.py                   # Streamlit app entry point
 
@@ -79,9 +71,7 @@ football_scout/
 
 
 ## 🔮 Future Improvements 
-
-- **Optimize 'Market Value' scraping** to run in public environments
-  
+ 
 - **Create a new view with 'Player Detailed Stats'** that user could enter to know more about a given player
 
 - **Extend player analysis with time-series** stats - as for now it's limited to one season

@@ -430,40 +430,40 @@ with tab1:
     # Tab1 footer note shown when table is displayed
     # ------------------------------------------------        
 
-    if run:
-       # Tab 1 Footer
-        st.write("")
-        st.markdown(
-            """
-        <div style="text-align:left; color: gray; font-size: 10px; margin-left:10px; margin-top:5px;">
-            Skills were weighted according to related statistics as detailed below.  All metrics were scaled before weighting. <br>
-            1. <b>Goal Scoring</b>: Goals scored per 90m (60%), Goals scored excluding penalties per 90m (40%).
-            2. <b>Goal Efficacy</b>: Goals scored minus expected goals scored per 90m (40%), 
-            Goals divided by total shoots (40%), Penalties scored versus penalties attempted (20%).
-            3. <b>Shooting</b>: Total shoots per 90m (30%), Shoots on Target per 90m (40%), 
-            Goals versus total shoots (20%), FreeKick Tacker - yes or no (10%)
-            4. <b>Passing Influence</b>: Short passes completed per 90min (17.5%), 
-            Medium passes completed per 90m (17.5%), Long passes completed per 90m (17.5%), 
-            Progressive passes completed per 90m (35%), Progressive passes distance per 90m (12.5%).
-            5. <b>Passing Accuracy</b>: Total passes accuracy (55%), short passes accuracy (15%), 
-            medium passes accuracy (15%), long passes accuracy (15%).
-            6. <b>Goal Creation</b>: Assists per 90m (40%), Key Passes per 90m (30%), 
-            Goal Creating Actions per 90m (20%), Penalty won per 90m (10%).
-            7. <b>Possession Influence</b>: Ball touches per 90m (40%), Carries per 90m (40%), 
-            Fouls Suffered per 90m (20%).
-            8. <b>Progression</b>: Progressive Carries per 90m (60%), Carries progressive distance per 90m (40%).
-            9. <b>Dribling</b>: Successfull dribles per 90m (50%), Percentage of successfull dribles (50%).
-            10. <b>Aerial Influence</b>: Total aerial duels per 90m (40%), Percentage of aerial duels won (60%).
-            11. <b>Defensive Influence</b>: Tackles won per 90m (17.5%), Blocks per 90m (17.5%), 
-            Interceptions per 90m (17.5%), Clearances per 90m, Ball (17.5%) Recoveries per 90m (17.5%).
-            12. <b>Discipline and Consistency</b>: Own Goals per 90m (17.5%), Errors commited per 90m (17.5%), 
-            Yellow cards per 90m (15%), Red cards per 90m (17.5%), Fouls commited per 90m (15%), 
-            Penalties commited per 90m (17.5%).
-            </a><br>
-        </div>
-            """,
-            unsafe_allow_html=True
-        )    
+
+    # Tab 1 Footer
+    st.write("")
+    st.markdown(
+        """
+    <div style="text-align:left; color: gray; font-size: 10px; margin-left:10px; margin-top:5px;">
+        Skills were weighted according to related statistics as detailed below.  All metrics were scaled before weighting. <br>
+        1. <b>Goal Scoring</b>: Goals scored per 90m (60%), Goals scored excluding penalties per 90m (40%).
+        2. <b>Goal Efficacy</b>: Goals scored minus expected goals scored per 90m (40%), 
+        Goals divided by total shoots (40%), Penalties scored versus penalties attempted (20%).
+        3. <b>Shooting</b>: Total shoots per 90m (30%), Shoots on Target per 90m (40%), 
+        Goals versus total shoots (20%), FreeKick Tacker - yes or no (10%)
+        4. <b>Passing Influence</b>: Short passes completed per 90min (17.5%), 
+        Medium passes completed per 90m (17.5%), Long passes completed per 90m (17.5%), 
+        Progressive passes completed per 90m (35%), Progressive passes distance per 90m (12.5%).
+        5. <b>Passing Accuracy</b>: Total passes accuracy (55%), short passes accuracy (15%), 
+        medium passes accuracy (15%), long passes accuracy (15%).
+        6. <b>Goal Creation</b>: Assists per 90m (40%), Key Passes per 90m (30%), 
+        Goal Creating Actions per 90m (20%), Penalty won per 90m (10%).
+        7. <b>Possession Influence</b>: Ball touches per 90m (40%), Carries per 90m (40%), 
+        Fouls Suffered per 90m (20%).
+        8. <b>Progression</b>: Progressive Carries per 90m (60%), Carries progressive distance per 90m (40%).
+        9. <b>Dribling</b>: Successfull dribles per 90m (50%), Percentage of successfull dribles (50%).
+        10. <b>Aerial Influence</b>: Total aerial duels per 90m (40%), Percentage of aerial duels won (60%).
+        11. <b>Defensive Influence</b>: Tackles won per 90m (17.5%), Blocks per 90m (17.5%), 
+        Interceptions per 90m (17.5%), Clearances per 90m (17.5%), Ball Recoveries per 90m (17.5%).
+        12. <b>Discipline and Consistency</b>: Own Goals per 90m (17.5%), Errors commited per 90m (17.5%), 
+        Yellow cards per 90m (15%), Red cards per 90m (17.5%), Fouls commited per 90m (15%), 
+        Penalties commited per 90m (17.5%).
+        </a><br>
+    </div>
+        """,
+        unsafe_allow_html=True
+    )    
 
 # ===========================
 # Tab 2: Compare (Radar)
@@ -626,7 +626,7 @@ with tab2:
             9. <b>Dribling</b>: Successfull dribles per 90m (50%), Percentage of successfull dribles (50%).
             10. <b>Aerial Influence</b>: Total aerial duels per 90m (40%), Percentage of aerial duels won (60%).
             11. <b>Defensive Influence</b>: Tackles won per 90m (17.5%), Blocks per 90m (17.5%), 
-            Interceptions per 90m (17.5%), Clearances per 90m, Ball (17.5%) Recoveries per 90m (17.5%).
+            Interceptions per 90m (17.5%), Clearances per 90m (17.5%), Ball Recoveries per 90m (17.5%).
             12. <b>Discipline and Consistency</b>: Own Goals per 90m (17.5%), Errors commited per 90m (17.5%), 
             Yellow cards per 90m (15%), Red cards per 90m (17.5%), Fouls commited per 90m (15%), 
             Penalties commited per 90m (17.5%).
